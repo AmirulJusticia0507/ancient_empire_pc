@@ -1,0 +1,21 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Godot 4
+.godot/
+/android/
+/export_presets.cfg
+
+# Godot / .NET (C#)
+.mono/
+data_*/
+mono_crash.*.json
+bin/
+obj/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
