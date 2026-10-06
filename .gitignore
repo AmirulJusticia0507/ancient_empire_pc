@@ -15,6 +15,9 @@ mono_crash.*.json
 bin/
 obj/
 
+# Generated test artifacts
+tests/shot.png
+
 # OS / editor
 .DS_Store
 Thumbs.db

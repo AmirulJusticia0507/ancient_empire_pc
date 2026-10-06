@@ -68,7 +68,38 @@ Mengembangkan pengalaman strategi taktis berbasis giliran yang dapat dimainkan d
 
 ## Pengembangan
 
-Fondasi teknis direncanakan memakai Godot 4. Langkah build dan run akan diisi setelah proyek Godot diinisialisasi.
+### Prasyarat
+
+- **Godot 4.x** (dikembangkan dengan 4.7). Unduh dari https://godotengine.org/download atau `winget install --id GodotEngine.GodotEngine -e`.
+
+### Menjalankan
+
+Jalankan proyek langsung tanpa membuka editor:
+
+```
+godot --path .
+```
+
+Atau buka Godot, pilih **Import**, arahkan ke `project.godot` di folder ini, lalu tekan **F5**.
+
+### Struktur proyek
+
+- `project.godot` — konfigurasi proyek.
+- `scenes/main.tscn` — scene utama.
+- `scripts/game.gd` — logika dan render gameplay (grid, unit, giliran, pertarungan).
+- `tests/smoke.tscn` — uji fungsional singkat.
+
+### Pengujian
+
+```
+godot --headless --path . res://tests/smoke.tscn
+```
+
+Keluaran `SMOKE OK` menandakan logika dasar (pilih unit, gerak, giliran musuh, restart) berjalan.
+
+### Status gameplay
+
+Prototipe awal sudah memuat: papan grid, unit pemain dan musuh, pergerakan berbasis jangkauan, penyerangan unit bersebelahan, giliran bergantian dengan AI musuh sederhana, serta kondisi menang/kalah dan mulai ulang. Aturan, unit, dan aset orisinal masih akan dikembangkan.
 
 ## Lisensi dan aset
 
