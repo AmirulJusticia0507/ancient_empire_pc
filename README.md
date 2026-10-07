@@ -162,6 +162,7 @@ Cheat **hanya memengaruhi pemain**, tidak menyentuh musuh. Saat bermain, tekan t
 - **G** — aktif/nonaktif *god mode* (unit pemain kebal).
 - **M** — semua unit pemain bisa bergerak lagi.
 - **P** — serangan unit pemain +5.
+- **B** — tambah 500 gold untuk membeli item atau merekrut unit.
 
 ### Status gameplay
 

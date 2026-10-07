@@ -85,6 +85,7 @@ var message := ""
 var time := 0.0
 var animating := false
 var floaters := []
+var attack_fx := []
 var god_mode := false
 var buildings := []
 var player_gold := 0
@@ -275,6 +276,7 @@ func _setup_battle() -> void:
 	reachable = {}
 	attackable = {}
 	floaters.clear()
+	attack_fx.clear()
 	turn = 0
 	game_over = false
 	victory = false
@@ -307,11 +309,14 @@ func _refresh_ui() -> void:
 
 func _process(delta: float) -> void:
 	time += delta
-	var active := selected != null or animating or not floaters.is_empty()
+	var active := selected != null or animating or not floaters.is_empty() or not attack_fx.is_empty()
 	for f in floaters:
 		f.life -= delta
 		f.pos.y -= 34.0 * delta
 	floaters = floaters.filter(func(f): return f.life > 0.0)
+	for fx in attack_fx:
+		fx.life -= delta
+	attack_fx = attack_fx.filter(func(fx): return fx.life > 0.0)
 	if active:
 		queue_redraw()
 
@@ -323,6 +328,7 @@ func _draw() -> void:
 	_draw_highlights()
 	_draw_buildings()
 	_draw_units()
+	_draw_attack_fx()
 	_draw_hud()
 	_draw_build_menu()
 	_draw_floaters()
@@ -547,6 +553,22 @@ func _draw_floaters() -> void:
 		_draw_text(f.text, f.pos, 26, c)
 
 
+func _draw_attack_fx() -> void:
+	for fx in attack_fx:
+		var alpha: float = clampf(fx.life / 0.35, 0.0, 1.0)
+		var direction: Vector2 = fx.end - fx.start
+		var normal := direction.normalized().orthogonal()
+		var points := PackedVector2Array()
+		for i in 7:
+			var point: Vector2 = fx.start.lerp(fx.end, i / 6.0)
+			if i > 0 and i < 6:
+				point += normal * sin(time * 38.0 + i * 2.4) * 10.0
+			points.append(point)
+		draw_polyline(points, Color(0.20, 0.70, 1.0, alpha * 0.35), 9.0, true)
+		draw_polyline(points, Color(0.80, 0.95, 1.0, alpha), 3.0, true)
+		draw_circle(fx.end, 24.0 * alpha, Color(0.35, 0.82, 1.0, alpha * 0.28))
+
+
 func _draw_text(text: String, pos: Vector2, size: int, color: Color) -> void:
 	draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
 
@@ -575,6 +597,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cheat_reset_moves()
 		elif event.keycode == KEY_P:
 			_cheat_power()
+		elif event.keycode == KEY_B:
+			_cheat_gold()
 		return
 	if event is InputEventMouseMotion:
 		var cell := _cell_at(event.position)
@@ -648,6 +672,7 @@ func _move_unit(u: Unit, cell: Vector2i) -> void:
 
 
 func _attack(attacker: Unit, defender: Unit) -> void:
+	_spawn_attack_fx(attacker.visual_pos, defender.visual_pos)
 	if god_mode and defender.team == 0:
 		_spawn_floater(defender.visual_pos + Vector2(0, -10), "IMMUNE", ACCENT)
 		message = "Cheat aktif: unit pemain kebal!"
@@ -666,6 +691,11 @@ func _attack(attacker: Unit, defender: Unit) -> void:
 			player_gold += KILL_REWARD
 			_spawn_floater(dead_pos + Vector2(0, -60), "+%dg" % KILL_REWARD, GOLD_COL)
 	_check_game_over()
+
+
+func _spawn_attack_fx(start: Vector2, end: Vector2) -> void:
+	attack_fx.append({"start": start, "end": end, "life": 0.35})
+	queue_redraw()
 
 
 func _spawn_floater(pos: Vector2, text: String, color: Color) -> void:
@@ -722,6 +752,12 @@ func _cheat_power() -> void:
 			_spawn_floater(u.visual_pos + Vector2(0, -10), "+5 ATK", ACCENT_WARM)
 	message = "Cheat: serangan unit pemain +5."
 	queue_redraw()
+
+
+func _cheat_gold() -> void:
+	player_gold += 500
+	message = "Cheat: bonus 500 gold untuk belanja item."
+	_spawn_floater(Vector2(1100, 215), "+500g", GOLD_COL)
 
 
 func _compute_reachable(unit: Unit) -> Dictionary:

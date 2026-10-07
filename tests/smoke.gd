@@ -46,8 +46,11 @@ func _ready() -> void:
 
 	main._cheat_heal()
 	main._cheat_power()
+	var gold_cheat_before = main.player_gold
+	main._cheat_gold()
 	main._cheat_toggle_god()
 	_assert(main.god_mode, "cheat god mode aktif")
+	_assert(main.player_gold == gold_cheat_before + 500, "cheat gold menambah 500")
 	main._cheat_kill_all()
 	_assert(main.game_over, "cheat hapus semua musuh memicu kemenangan")
 	_assert(main.victory, "kemenangan tercatat")
@@ -66,6 +69,8 @@ func _ready() -> void:
 	_assert(has_dragon, "level 100 menampilkan naga final")
 	_assert(main._stage_enemies(10)[0].kind == "warlord", "boss muncul setiap 10 level")
 	_assert(main._stage_enemies(100).size() <= main.ENEMY_SPOTS.size(), "musuh tidak bertumpuk")
+	main._attack(main.units[0], main.units[3])
+	_assert(main.attack_fx.size() == 1, "serangan memunculkan efek petir")
 	main._cheat_kill_all()
 	_assert(main.campaign_won, "menang level 100 menamatkan kampanye")
 
