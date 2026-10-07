@@ -151,6 +151,8 @@ Di peta terdapat bangunan milik masing-masing pihak (menghalangi pergerakan). Sa
 - **Barak (A)** — rekrut unit baru: *Prajurit* (60g) atau *Pemanah* (90g). Unit muncul di petak kosong terdekat.
 - **Pasar ($)** — beli item untuk unit pemain yang sedang dipilih: *Ramuan* (40g, pulihkan penuh) atau *Asah* (50g, +2 ATK).
 
+Untuk mengudeta bangunan musuh, tempatkan unit pemain tepat di sebelah bangunan lalu klik bangunannya. Bangunan langsung berpindah kepemilikan, dapat digunakan pemain, dan memberi bonus **100 gold**.
+
 Ekonomi: pemain mulai dengan **200 gold**, dan mendapat **+50 gold** setiap kali menghabisi unit musuh.
 
 ### Cheat (untuk uji coba)

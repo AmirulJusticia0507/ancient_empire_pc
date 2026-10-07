@@ -50,6 +50,14 @@ func _ready() -> void:
 	main._on_build_action("whetstone")
 	_assert(main.units[0].atk == 6, "asah menambah ATK +2")
 	main._close_build_menu()
+	var captured_building = main.buildings[2]
+	main.units[0].pos = Vector2i(8, 1)
+	main.units[0].visual_pos = main._cell_center(main.units[0].pos)
+	main.selected = main.units[0]
+	var capture_gold_before = main.player_gold
+	main._on_click(captured_building.pos)
+	_assert(captured_building.owner == 0, "markas musuh bisa dikudeta")
+	_assert(main.player_gold == capture_gold_before + 100, "kudeta memberi bonus gold")
 
 	main._cheat_heal()
 	main._cheat_power()

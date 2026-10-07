@@ -35,6 +35,7 @@ const ARCHER_COST := 90
 const POTION_COST := 40
 const WHETSTONE_COST := 50
 const KILL_REWARD := 50
+const CAPTURE_REWARD := 100
 const MAX_STAGE := 100
 const REGIONS := ["Bukit Zamrud", "Hutan Kabut", "Rawa Sunyi", "Gurun Bara", "Pesisir Badai", "Dataran Beku", "Lembah Bayangan", "Benteng Langit", "Tanah Terlarang"]
 const ENEMY_SPOTS := [Vector2i(7, 0), Vector2i(7, 2), Vector2i(6, 3), Vector2i(7, 5), Vector2i(6, 1), Vector2i(5, 4)]
@@ -475,6 +476,8 @@ func _draw_buildings() -> void:
 			_draw_text("A", base + Vector2(-7, 18), 18, Color("#0b1120"))
 		if b == active_building:
 			draw_rect(_cell_rect(b.pos).grow(1.0), ACCENT_WARM, false, 3.0)
+		elif b.owner == 1 and selected != null and _manhattan(selected.pos, b.pos) == 1:
+			draw_rect(_cell_rect(b.pos).grow(1.0), ACCENT_WARM, false, 3.0)
 
 
 func _draw_units() -> void:
@@ -524,7 +527,7 @@ func _draw_hud() -> void:
 	_draw_text(message, Vector2(70, 668), 18, TEXT_COL)
 	var hint := "Klik unit › petak untuk bergerak › musuh bersebelahan untuk serang."
 	_draw_text(hint, Vector2(70, 692), 14, MUTED_COL)
-	_draw_text("Bangunan: $ pasar (item)  •  A barak (rekrut)  •  klik bangunanmu saat giliranmu.",
+	_draw_text("Bangunan: $ pasar  •  A barak  •  unit di sebelah markas musuh dapat mengudeta.",
 		Vector2(70, 714), 13, Color(0.6, 0.64, 0.7))
 
 	_draw_text("STATUS GILIRAN", Vector2(790, 130), 14, MUTED_COL)
@@ -688,8 +691,10 @@ func _on_click(cell: Vector2i) -> void:
 	if b != null:
 		if b.owner == 0:
 			_open_build_menu(b)
+		elif selected != null and not selected.moved and _manhattan(selected.pos, b.pos) == 1:
+			_capture_building(b)
 		else:
-			message = "Itu bangunan milik musuh."
+			message = "Dekati markas musuh dengan unit, lalu klik untuk mengudeta."
 		queue_redraw()
 		return
 	var u = _unit_at(cell)
@@ -768,6 +773,18 @@ func _spawn_attack_fx(start: Vector2, end: Vector2) -> void:
 
 func _spawn_floater(pos: Vector2, text: String, color: Color) -> void:
 	floaters.append({"pos": pos, "text": text, "color": color, "life": 0.9})
+	queue_redraw()
+
+
+func _capture_building(building: Building) -> void:
+	building.owner = 0
+	selected.moved = true
+	selected = null
+	reachable = {}
+	attackable = {}
+	player_gold += CAPTURE_REWARD
+	_spawn_floater(_cell_center(building.pos) + Vector2(0, -28), "KUDETA +%dg" % CAPTURE_REWARD, ACCENT_WARM)
+	message = "Kudeta berhasil! Markas musuh kini milikmu dan bisa langsung digunakan."
 	queue_redraw()
 
 
