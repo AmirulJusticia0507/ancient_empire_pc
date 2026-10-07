@@ -94,17 +94,23 @@ var stage := 1
 var victory := false
 var campaign_won := false
 var stage_title := ""
+var in_main_menu := true
+var has_started := false
 
 var end_turn_btn: Button
 var restart_btn: Button
 var next_btn: Button
+var start_btn: Button
+var menu_btn: Button
 var build_buttons := []
 var close_menu_btn: Button
 var font: Font
 var unit_tex := {}
+var battlefield_tex: Texture2D
 
 
 func _load_textures() -> void:
+	battlefield_tex = load("res://assets/backgrounds/fantasy_battlefield.png")
 	unit_tex["soldier"] = load("res://assets/icons/soldier.svg")
 	unit_tex["archer"] = load("res://assets/icons/archer.svg")
 	unit_tex["brute"] = load("res://assets/icons/brute.svg")
@@ -134,6 +140,8 @@ func _ready() -> void:
 	_build_styleboxes()
 	_build_ui()
 	_start_campaign()
+	in_main_menu = true
+	_refresh_ui()
 	set_process(true)
 	queue_redraw()
 
@@ -173,6 +181,11 @@ func _make_box(bg: Color, radius: int, border := 0, border_col := Color(0, 0, 0,
 
 func _build_ui() -> void:
 	var panel_x := 760.0
+	start_btn = _make_button("Mulai Kampanye  (Enter)", Vector2(430, 500), Vector2(420, 62))
+	start_btn.pressed.connect(_enter_game)
+	menu_btn = _make_button("Menu Utama  (Esc)", Vector2(1040, 24), Vector2(200, 46))
+	menu_btn.add_theme_font_size_override("font_size", 16)
+	menu_btn.pressed.connect(_show_main_menu)
 	end_turn_btn = _make_button("Akhiri Giliran  (E)", Vector2(panel_x + 30, 545), Vector2(420, 58))
 	end_turn_btn.pressed.connect(_on_end_turn_pressed)
 	restart_btn = _make_button("Coba Lagi  (R)", Vector2(panel_x + 30, 545), Vector2(420, 58))
@@ -291,6 +304,16 @@ func _setup_battle() -> void:
 func _refresh_ui() -> void:
 	if end_turn_btn == null:
 		return
+	if in_main_menu:
+		start_btn.visible = true
+		start_btn.text = "Lanjutkan Pertempuran  (Enter)" if has_started else "Mulai Kampanye  (Enter)"
+		menu_btn.visible = false
+		end_turn_btn.visible = false
+		restart_btn.visible = false
+		next_btn.visible = false
+		return
+	start_btn.visible = false
+	menu_btn.visible = true
 	if game_over:
 		end_turn_btn.visible = false
 		next_btn.visible = victory and not campaign_won
@@ -323,6 +346,9 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	_draw_background()
+	if in_main_menu:
+		_draw_main_menu()
+		return
 	draw_style_box(sb_board, _board_rect())
 	_draw_tiles()
 	_draw_highlights()
@@ -338,12 +364,26 @@ func _draw() -> void:
 
 func _draw_background() -> void:
 	var vs := get_viewport_rect().size
+	if battlefield_tex != null:
+		draw_texture_rect(battlefield_tex, Rect2(Vector2.ZERO, vs), false)
+		draw_rect(Rect2(Vector2.ZERO, vs), Color(0.02, 0.04, 0.09, 0.58), true)
+		return
 	var pts := PackedVector2Array([Vector2.ZERO, Vector2(vs.x, 0), vs, Vector2(0, vs.y)])
 	var cols := PackedColorArray([BG_TOP, BG_TOP, BG_BOTTOM, BG_BOTTOM])
 	draw_polygon(pts, cols)
 	# Soft atmospheric glows keep the battlefield from feeling like a flat UI grid.
 	draw_circle(Vector2(170, 90), 230, Color(0.05, 0.40, 0.36, 0.10))
 	draw_circle(Vector2(1110, 650), 310, Color(0.12, 0.28, 0.55, 0.10))
+
+
+func _draw_main_menu() -> void:
+	var card := Rect2(Vector2(330, 110), Vector2(620, 500))
+	draw_style_box(_make_box(Color(0.025, 0.045, 0.085, 0.90), 30, 1, Color(0.36, 0.54, 0.72, 0.7), 28, Color(0, 0, 0, 0.7)), card)
+	_draw_centered("ANCIENT EMPIRE", Rect2(Vector2(330, 175), Vector2(620, 70)), 48, TEXT_COL)
+	_draw_centered("BANGKITNYA NAGA ABADI", Rect2(Vector2(330, 242), Vector2(620, 34)), 18, ACCENT_WARM)
+	_draw_centered("Pimpin pasukanmu melewati 100 medan pertempuran", Rect2(Vector2(350, 320), Vector2(580, 30)), 18, TEXT_COL)
+	_draw_centered("Taklukkan panglima, bangun pasukan, dan selamatkan kerajaan.", Rect2(Vector2(350, 354), Vector2(580, 30)), 15, MUTED_COL)
+	_draw_centered("Strategi berbasis giliran  •  Boss tiap 10 level", Rect2(Vector2(350, 420), Vector2(580, 26)), 14, Color(0.66, 0.76, 0.86))
 
 
 func _draw_tiles() -> void:
@@ -581,6 +621,13 @@ func _draw_centered(text: String, rect: Rect2, size: int, color: Color) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
+		if in_main_menu:
+			if event.keycode == KEY_ENTER:
+				_enter_game()
+			return
+		if event.keycode == KEY_ESCAPE:
+			_show_main_menu()
+			return
 		if event.keycode == KEY_R:
 			_restart()
 		elif event.keycode == KEY_N:
@@ -612,7 +659,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_click(cell: Vector2i) -> void:
-	if game_over or turn != 0:
+	if in_main_menu or game_over or turn != 0:
 		return
 	if not _in_bounds(cell):
 		return
@@ -907,6 +954,20 @@ func _restart() -> void:
 		_start_campaign()
 	else:
 		_setup_battle()
+
+
+func _enter_game() -> void:
+	in_main_menu = false
+	has_started = true
+	_refresh_ui()
+	queue_redraw()
+
+
+func _show_main_menu() -> void:
+	in_main_menu = true
+	_close_build_menu()
+	_refresh_ui()
+	queue_redraw()
 
 
 func _unit_at(cell: Vector2i) -> Unit:

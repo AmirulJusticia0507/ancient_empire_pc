@@ -6,6 +6,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	main.stage = 100
 	main._setup_battle()
+	main._enter_game()
 	for i in 5:
 		await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()

@@ -5,6 +5,9 @@ func _ready() -> void:
 	add_child(main)
 	await get_tree().process_frame
 
+	_assert(main.in_main_menu, "game dibuka dari menu utama")
+	main._enter_game()
+	_assert(not main.in_main_menu, "tombol mulai membuka permainan")
 	_assert(main.units.size() == 7, "jumlah unit awal")
 	_assert(main.turn == 0, "mulai di giliran pemain")
 
@@ -29,6 +32,9 @@ func _ready() -> void:
 
 	main._restart()
 	_assert(main.units.size() == 7 and main.turn == 0, "restart mengembalikan state")
+	main._show_main_menu()
+	_assert(main.in_main_menu, "permainan bisa kembali ke menu utama")
+	main._enter_game()
 
 	_assert(main.buildings.size() == 4, "bangunan tersedia")
 	var before_count = main.units.size()
