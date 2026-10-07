@@ -54,15 +54,20 @@ func _ready() -> void:
 
 	main._next_stage()
 	_assert(main.stage == 2, "lanjut ke pertempuran 2")
-	_assert(main.units.size() == 8, "komposisi musuh berbeda di pertempuran 2")
+	_assert(main.units.size() == 7, "jumlah unit level 2 sesuai kapasitas")
+	_assert(main._stage_enemies(2)[0].hp > main._stage_enemies(1)[0].hp, "musuh makin kuat setiap level")
 
-	main.stage = 4
+	main.stage = 100
 	main._setup_battle()
 	var has_dragon = false
 	for u in main.units:
 		if u.kind == "dragon":
 			has_dragon = true
-	_assert(has_dragon, "pertempuran final menampilkan naga")
+	_assert(has_dragon, "level 100 menampilkan naga final")
+	_assert(main._stage_enemies(10)[0].kind == "warlord", "boss muncul setiap 10 level")
+	_assert(main._stage_enemies(100).size() <= main.ENEMY_SPOTS.size(), "musuh tidak bertumpuk")
+	main._cheat_kill_all()
+	_assert(main.campaign_won, "menang level 100 menamatkan kampanye")
 
 	print("SMOKE OK")
 	get_tree().quit(0)

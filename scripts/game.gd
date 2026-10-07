@@ -35,8 +35,8 @@ const ARCHER_COST := 90
 const POTION_COST := 40
 const WHETSTONE_COST := 50
 const KILL_REWARD := 50
-const MAX_STAGE := 4
-const STAGE_TITLES := ["Perampok Bukit", "Pasukan Bayaran", "Panglima Perang", "Sarang Naga"]
+const MAX_STAGE := 100
+const REGIONS := ["Bukit Zamrud", "Hutan Kabut", "Rawa Sunyi", "Gurun Bara", "Pesisir Badai", "Dataran Beku", "Lembah Bayangan", "Benteng Langit", "Tanah Terlarang"]
 const ENEMY_SPOTS := [Vector2i(7, 0), Vector2i(7, 2), Vector2i(6, 3), Vector2i(7, 5), Vector2i(6, 1), Vector2i(5, 4)]
 
 
@@ -228,28 +228,37 @@ func _start_campaign() -> void:
 
 func _stage_enemies(s: int) -> Array:
 	var list := []
-	if s <= 1:
-		for i in 4:
-			list.append({"kind": "brute", "hp": 12, "atk": 3})
-	elif s == 2:
-		for i in 5:
-			list.append({"kind": "brute", "hp": 14, "atk": 3})
-	elif s == 3:
-		list.append({"kind": "warlord", "hp": 30, "atk": 6, "mr": 2, "ar": 1})
-		for i in 3:
-			list.append({"kind": "brute", "hp": 16, "atk": 4})
-	else:
-		list.append({"kind": "dragon", "hp": 55, "atk": 9, "mr": 2, "ar": 2})
-		for i in 2:
-			list.append({"kind": "brute", "hp": 18, "atk": 4})
+	var tier := (s - 1) / 10
+	var enemy_count := mini(4 + (s - 1) / 20, ENEMY_SPOTS.size())
+	var is_boss := s % 10 == 0
+	if is_boss:
+		var final_boss := s == MAX_STAGE
+		list.append({
+			"kind": "dragon" if final_boss else "warlord",
+			"hp": 60 + tier * 9,
+			"atk": 7 + tier,
+			"mr": 2,
+			"ar": 2 if final_boss else 1
+		})
+	for i in enemy_count - list.size():
+		list.append({"kind": "brute", "hp": 12 + ceili(float(s - 1) / 2.0), "atk": 3 + tier})
 	return list
+
+
+func _stage_title(s: int) -> String:
+	if s == MAX_STAGE:
+		return "Sarang Naga Abadi"
+	if s % 10 == 0:
+		return "Panglima Wilayah %d" % (s / 10)
+	return REGIONS[((s - 1) / 10) % REGIONS.size()]
 
 
 func _setup_battle() -> void:
 	units.clear()
-	units.append(Unit.new(Vector2i(1, 1), 0, 14, 4, "soldier"))
-	units.append(Unit.new(Vector2i(1, 4), 0, 14, 4, "soldier"))
-	units.append(Unit.new(Vector2i(2, 2), 0, 12, 5, "soldier"))
+	var player_tier := (stage - 1) / 10
+	units.append(Unit.new(Vector2i(1, 1), 0, 14 + player_tier * 4, 4 + player_tier, "soldier"))
+	units.append(Unit.new(Vector2i(1, 4), 0, 14 + player_tier * 4, 4 + player_tier, "soldier"))
+	units.append(Unit.new(Vector2i(2, 2), 0, 12 + player_tier * 4, 5 + player_tier, "soldier"))
 	var enemies := _stage_enemies(stage)
 	for i in enemies.size():
 		var e: Dictionary = enemies[i]
@@ -270,7 +279,7 @@ func _setup_battle() -> void:
 	game_over = false
 	victory = false
 	god_mode = false
-	stage_title = STAGE_TITLES[stage - 1]
+	stage_title = _stage_title(stage)
 	_close_build_menu()
 	message = "Pertempuran %d: %s. Giliran pemain." % [stage, stage_title]
 	_refresh_ui()
@@ -475,7 +484,7 @@ func _draw_hud() -> void:
 
 	_draw_text("TUJUAN MISI", Vector2(790, 445), 14, MUTED_COL)
 	_draw_text("Kalahkan seluruh pasukan musuh", Vector2(790, 474), 19, TEXT_COL)
-	_draw_text("Menangkan 4 pertempuran untuk menaklukkan naga.", Vector2(790, 500), 13, MUTED_COL)
+	_draw_text("Taklukkan 100 level; boss muncul setiap 10 level.", Vector2(790, 500), 13, MUTED_COL)
 	if god_mode:
 		_draw_text("GOD MODE AKTIF", Vector2(1080, 522), 14, ACCENT)
 

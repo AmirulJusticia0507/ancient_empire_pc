@@ -4,7 +4,7 @@ func _ready() -> void:
 	var main = load("res://scenes/main.tscn").instantiate()
 	add_child(main)
 	await get_tree().process_frame
-	main.stage = 4
+	main.stage = 100
 	main._setup_battle()
 	for i in 5:
 		await get_tree().process_frame

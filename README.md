@@ -140,14 +140,9 @@ Lalu buka http://localhost:8060 di browser.
 
 ### Kampanye dan musuh
 
-Permainan berjalan sebagai kampanye berurutan. Setiap kali menang, kamu maju ke pertempuran berikutnya dengan komposisi musuh yang berbeda dan makin kuat (sisa gold terbawa plus bonus):
+Permainan berjalan sebagai kampanye **100 level**. Setiap kemenangan membuka level berikutnya; statistik pemain dan musuh meningkat tiap 10 level, jumlah musuh bertambah bertahap, dan sisa gold tetap terbawa plus bonus.
 
-1. **Perampok Bukit** — gerombolan *brute*.
-2. **Pasukan Bayaran** — brute lebih banyak dan lebih kuat.
-3. **Panglima Perang** — *warlord* (HP/serangan tinggi, jangkauan gerak 2) dengan pengawal.
-4. **Sarang Naga** — boss **naga**: HP besar, jangkauan gerak 2, dan **menyerang dari jarak 2 petak**.
-
-Menang di pertempuran terakhir menuntaskan kampanye. Tekan **N** (atau tombol *Lanjut*) untuk maju; **R** untuk mengulang pertempuran saat kalah atau memulai kampanye baru setelah menang.
+Setiap level ke-10 menghadirkan boss **warlord** beserta pasukannya. Level 100 adalah pertarungan final melawan **Naga Abadi**, yang dapat menyerang dari jarak 2 petak. Menang di level 100 menuntaskan kampanye. Tekan **N** (atau tombol *Lanjut*) untuk maju; **R** untuk mengulang level saat kalah atau memulai kampanye baru setelah tamat.
 
 ### Bangunan dan ekonomi
 
