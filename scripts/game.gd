@@ -147,7 +147,11 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	if _load_progress():
 		has_started = true
-		_setup_battle()
+		if units.is_empty():
+			_setup_battle()
+		else:
+			stage_title = _stage_title(stage)
+			_refresh_ui()
 	else:
 		_start_campaign()
 	in_main_menu = true
@@ -258,6 +262,19 @@ func _save_progress() -> void:
 	var save := ConfigFile.new()
 	save.set_value("campaign", "stage", stage)
 	save.set_value("campaign", "gold", player_gold)
+	save.set_value("battle", "turn", turn)
+	save.set_value("battle", "game_over", game_over)
+	save.set_value("battle", "victory", victory)
+	save.set_value("battle", "campaign_won", campaign_won)
+	save.set_value("battle", "god_mode", god_mode)
+	var saved_units := []
+	for u in units:
+		saved_units.append({"pos": u.pos, "team": u.team, "hp": u.hp, "max_hp": u.max_hp, "atk": u.atk, "moved": u.moved, "kind": u.kind, "move_range": u.move_range, "atk_range": u.atk_range})
+	save.set_value("battle", "units", saved_units)
+	var saved_buildings := []
+	for b in buildings:
+		saved_buildings.append({"pos": b.pos, "type": b.type, "owner": b.owner})
+	save.set_value("battle", "buildings", saved_buildings)
 	save.save(save_path)
 
 
@@ -267,7 +284,22 @@ func _load_progress() -> bool:
 		return false
 	stage = clampi(int(save.get_value("campaign", "stage", 1)), 1, MAX_STAGE)
 	player_gold = maxi(int(save.get_value("campaign", "gold", 200)), 0)
-	campaign_won = false
+	turn = clampi(int(save.get_value("battle", "turn", 0)), 0, 1)
+	game_over = bool(save.get_value("battle", "game_over", false))
+	victory = bool(save.get_value("battle", "victory", false))
+	campaign_won = bool(save.get_value("battle", "campaign_won", false))
+	god_mode = bool(save.get_value("battle", "god_mode", false))
+	units.clear()
+	for data in save.get_value("battle", "units", []):
+		var u := Unit.new(data.get("pos", Vector2i.ZERO), int(data.get("team", 0)), maxi(int(data.get("max_hp", 1)), 1), maxi(int(data.get("atk", 1)), 1), str(data.get("kind", "soldier")), maxi(int(data.get("move_range", MOVE_RANGE)), 1), maxi(int(data.get("atk_range", ATTACK_RANGE)), 1))
+		u.hp = clampi(int(data.get("hp", u.max_hp)), 1, u.max_hp)
+		u.moved = bool(data.get("moved", false))
+		u.visual_pos = _cell_center(u.pos)
+		units.append(u)
+	buildings.clear()
+	for data in save.get_value("battle", "buildings", []):
+		buildings.append(Building.new(data.get("pos", Vector2i.ZERO), str(data.get("type", BARRACKS)), clampi(int(data.get("owner", 0)), 0, 1)))
+	message = "Pertempuran %d dimuat. Giliran %s." % [stage, "pemain" if turn == 0 else "musuh"]
 	return true
 
 
@@ -758,6 +790,7 @@ func _on_click(cell: Vector2i) -> void:
 		reachable = {}
 		attackable = {}
 		message = "Unit bergerak. Pilih unit lain atau akhiri giliran."
+		_save_progress()
 		queue_redraw()
 		return
 	if selected and u != null and u.team == 1 and _manhattan(selected.pos, u.pos) <= selected.atk_range:
@@ -766,6 +799,7 @@ func _on_click(cell: Vector2i) -> void:
 		selected = null
 		reachable = {}
 		attackable = {}
+		_save_progress()
 		queue_redraw()
 		return
 	selected = null
@@ -828,6 +862,7 @@ func _capture_building(building: Building) -> void:
 	player_gold += CAPTURE_REWARD
 	_spawn_floater(_cell_center(building.pos) + Vector2(0, -28), "KUDETA +%dg" % CAPTURE_REWARD, ACCENT_WARM)
 	message = "Kudeta berhasil! Markas musuh kini milikmu dan bisa langsung digunakan."
+	_save_progress()
 	queue_redraw()
 
 
@@ -844,6 +879,7 @@ func _cheat_kill_all() -> void:
 	reachable = {}
 	attackable = {}
 	_check_game_over()
+	_save_progress()
 	queue_redraw()
 
 
@@ -853,12 +889,14 @@ func _cheat_heal() -> void:
 			u.hp = u.max_hp
 			_spawn_floater(u.visual_pos + Vector2(0, -10), "FULL", HP_OK)
 	message = "Cheat: semua unit pemain dipulihkan."
+	_save_progress()
 	queue_redraw()
 
 
 func _cheat_toggle_god() -> void:
 	god_mode = not god_mode
 	message = "Cheat: mode kebal %s." % ("AKTIF" if god_mode else "NONAKTIF")
+	_save_progress()
 	queue_redraw()
 
 
@@ -870,6 +908,7 @@ func _cheat_reset_moves() -> void:
 	reachable = {}
 	attackable = {}
 	message = "Cheat: semua unit pemain bisa bergerak lagi."
+	_save_progress()
 	queue_redraw()
 
 
@@ -879,6 +918,7 @@ func _cheat_power() -> void:
 			u.atk += 5
 			_spawn_floater(u.visual_pos + Vector2(0, -10), "+5 ATK", ACCENT_WARM)
 	message = "Cheat: serangan unit pemain +5."
+	_save_progress()
 	queue_redraw()
 
 
@@ -886,6 +926,7 @@ func _cheat_gold() -> void:
 	player_gold += 500
 	message = "Cheat: bonus 500 gold untuk belanja item."
 	_spawn_floater(Vector2(1100, 215), "+500g", GOLD_COL)
+	_save_progress()
 
 
 func _compute_reachable(unit: Unit) -> Dictionary:
@@ -956,6 +997,7 @@ func _enemy_turn() -> void:
 			u.moved = false
 	turn = 0
 	message = "Giliran pemain. Pilih unit, lalu klik petak tujuan."
+	_save_progress()
 	_refresh_ui()
 	queue_redraw()
 
@@ -1036,6 +1078,7 @@ func _restart() -> void:
 		_start_campaign()
 	else:
 		_setup_battle()
+	_save_progress()
 
 
 func _enter_game() -> void:
@@ -1053,6 +1096,8 @@ func _start_new_campaign() -> void:
 func _show_main_menu() -> void:
 	in_main_menu = true
 	_close_build_menu()
+	if turn == 0 or game_over:
+		_save_progress()
 	_refresh_ui()
 	queue_redraw()
 
@@ -1152,6 +1197,7 @@ func _try_recruit(hp: int, atk: int, cost: int, label: String, kind: String, mov
 	if _spawn_unit_near(active_building, 0, hp, atk, kind, move_range, atk_range):
 		player_gold -= cost
 		message = "%s direkrut (-%dg). Sisa gold: %d." % [label, cost, player_gold]
+		_save_progress()
 	else:
 		message = "Tidak ada petak kosong untuk unit baru."
 	_open_build_menu(active_building)
@@ -1174,6 +1220,7 @@ func _try_item(kind: String) -> void:
 		_spawn_floater(selected.visual_pos + Vector2(0, -10), "+2 ATK", ACCENT_WARM)
 		message = "Asah dipakai: +2 ATK (-%dg)." % cost
 	player_gold -= cost
+	_save_progress()
 	_open_build_menu(active_building)
 	queue_redraw()
 

@@ -13,10 +13,18 @@ func _ready() -> void:
 	_assert(not main.in_main_menu, "tombol mulai membuka permainan")
 	main.stage = 7
 	main.player_gold = 345
+	main.units[0].hp = 3
+	main.units[0].atk = 11
+	main.units[0].pos = Vector2i(4, 4)
+	main.buildings[2].owner = 0
 	main._save_progress()
 	main.stage = 1
 	main.player_gold = 0
+	main.units.clear()
+	main.buildings.clear()
 	_assert(main._load_progress() and main.stage == 7 and main.player_gold == 345, "progres level dan gold tersimpan")
+	_assert(main.units[0].hp == 3 and main.units[0].atk == 11 and main.units[0].pos == Vector2i(4, 4), "kondisi pasukan tersimpan")
+	_assert(main.buildings[2].owner == 0, "kepemilikan bangunan tersimpan")
 	main._start_new_campaign()
 	_assert(main.stage == 1 and main.player_gold == 200, "kampanye baru menghapus progres lama")
 	_assert(not main.in_main_menu, "kampanye baru langsung membuka permainan")

@@ -2,12 +2,12 @@
 
 Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 
-## 1. Save/load progres `[-]`
+## 1. Save/load progres `[x]`
 
 - [x] Simpan dan muat level terakhir.
 - [x] Simpan dan muat gold.
 - [x] Tombol lanjutkan progres dan kampanye baru.
-- [ ] Simpan pasukan pemain, termasuk jenis unit, HP, ATK, dan posisi.
+- [x] Simpan kondisi pertempuran: seluruh pasukan, jenis unit, HP, ATK, posisi, bangunan, dan giliran.
 
 ## 2. Variasi tujuan `[-]`
 
@@ -63,11 +63,10 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 
 ## Urutan pengerjaan berikutnya
 
-1. Lengkapi save/load pasukan.
-2. Tambahkan variasi tujuan.
-3. Tambahkan pilihan hadiah kemenangan.
-4. Tingkatkan AI.
-5. Aktifkan efek terrain.
-6. Tambahkan audio dan animasi lanjutan.
-7. Tambahkan pengaturan dan pause.
-8. Tambahkan mode endless.
+1. Tambahkan variasi tujuan.
+2. Tambahkan pilihan hadiah kemenangan.
+3. Tingkatkan AI.
+4. Aktifkan efek terrain.
+5. Tambahkan audio dan animasi lanjutan.
+6. Tambahkan pengaturan dan pause.
+7. Tambahkan mode endless.
