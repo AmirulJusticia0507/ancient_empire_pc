@@ -6,6 +6,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	_assert(main.in_main_menu, "game dibuka dari menu utama")
+	_assert(is_equal_approx(main.start_btn.position.x + main.start_btn.size.x * 0.5, main.get_viewport_rect().size.x * 0.5), "tombol mulai berada di tengah")
 	main._enter_game()
 	_assert(not main.in_main_menu, "tombol mulai membuka permainan")
 	_assert(main.units.size() == 7, "jumlah unit awal")

@@ -139,6 +139,7 @@ func _ready() -> void:
 	_load_textures()
 	_build_styleboxes()
 	_build_ui()
+	get_viewport().size_changed.connect(_on_viewport_resized)
 	_start_campaign()
 	in_main_menu = true
 	_refresh_ui()
@@ -305,6 +306,9 @@ func _refresh_ui() -> void:
 	if end_turn_btn == null:
 		return
 	if in_main_menu:
+		var menu_card := _menu_card_rect()
+		start_btn.size.x = minf(420.0, menu_card.size.x - 40.0)
+		start_btn.position = Vector2(menu_card.position.x + (menu_card.size.x - start_btn.size.x) * 0.5, menu_card.end.y - 110)
 		start_btn.visible = true
 		start_btn.text = "Lanjutkan Pertempuran  (Enter)" if has_started else "Mulai Kampanye  (Enter)"
 		menu_btn.visible = false
@@ -377,13 +381,24 @@ func _draw_background() -> void:
 
 
 func _draw_main_menu() -> void:
-	var card := Rect2(Vector2(330, 110), Vector2(620, 500))
+	var card := _menu_card_rect()
 	draw_style_box(_make_box(Color(0.025, 0.045, 0.085, 0.90), 30, 1, Color(0.36, 0.54, 0.72, 0.7), 28, Color(0, 0, 0, 0.7)), card)
-	_draw_centered("ANCIENT EMPIRE", Rect2(Vector2(330, 175), Vector2(620, 70)), 48, TEXT_COL)
-	_draw_centered("BANGKITNYA NAGA ABADI", Rect2(Vector2(330, 242), Vector2(620, 34)), 18, ACCENT_WARM)
-	_draw_centered("Pimpin pasukanmu melewati 100 medan pertempuran", Rect2(Vector2(350, 320), Vector2(580, 30)), 18, TEXT_COL)
-	_draw_centered("Taklukkan panglima, bangun pasukan, dan selamatkan kerajaan.", Rect2(Vector2(350, 354), Vector2(580, 30)), 15, MUTED_COL)
-	_draw_centered("Strategi berbasis giliran  •  Boss tiap 10 level", Rect2(Vector2(350, 420), Vector2(580, 26)), 14, Color(0.66, 0.76, 0.86))
+	_draw_centered("ANCIENT EMPIRE", Rect2(card.position + Vector2(0, 65), Vector2(card.size.x, 70)), 48, TEXT_COL)
+	_draw_centered("BANGKITNYA NAGA ABADI", Rect2(card.position + Vector2(0, 132), Vector2(card.size.x, 34)), 18, ACCENT_WARM)
+	_draw_centered("Pimpin pasukanmu melewati 100 medan pertempuran", Rect2(card.position + Vector2(20, 210), Vector2(card.size.x - 40, 30)), 18, TEXT_COL)
+	_draw_centered("Taklukkan panglima, bangun pasukan, dan selamatkan kerajaan.", Rect2(card.position + Vector2(20, 244), Vector2(card.size.x - 40, 30)), 15, MUTED_COL)
+	_draw_centered("Strategi berbasis giliran  •  Boss tiap 10 level", Rect2(card.position + Vector2(20, 310), Vector2(card.size.x - 40, 26)), 14, Color(0.66, 0.76, 0.86))
+
+
+func _menu_card_rect() -> Rect2:
+	var viewport_size := get_viewport_rect().size
+	var size := Vector2(minf(620.0, viewport_size.x - 40.0), minf(500.0, viewport_size.y - 40.0))
+	return Rect2((viewport_size - size) * 0.5, size)
+
+
+func _on_viewport_resized() -> void:
+	_refresh_ui()
+	queue_redraw()
 
 
 func _draw_tiles() -> void:
