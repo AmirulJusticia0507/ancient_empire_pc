@@ -9,10 +9,12 @@ func _ready() -> void:
 	_assert(main.turn == 0, "mulai di giliran pemain")
 
 	main._on_click(Vector2i(1, 1))
+	await get_tree().process_frame
 	_assert(main.selected != null, "unit terpilih")
 	_assert(main.reachable.size() > 1, "petak gerak dihitung")
 
 	main._on_click(Vector2i(1, 2))
+	await get_tree().create_timer(0.6).timeout
 	_assert(main.selected == null, "seleksi dilepas setelah gerak")
 	var moved = false
 	for u in main.units:
@@ -22,7 +24,7 @@ func _ready() -> void:
 
 	main._on_end_turn_pressed()
 	_assert(main.turn == 1, "giliran musuh dimulai")
-	await get_tree().create_timer(4.0).timeout
+	await get_tree().create_timer(8.0).timeout
 	_assert(main.turn == 0, "giliran kembali ke pemain")
 
 	main._restart()
