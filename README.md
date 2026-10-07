@@ -33,6 +33,8 @@ Terrain memengaruhi taktik: **hutan** mengurangi 2 damage yang diterima, **jalan
 
 Musik perang dan efek suara serangan, naga, unit kalah, serta kemenangan dibuat secara prosedural di dalam game. Unit yang kalah juga pecah menjadi partikel sebelum menghilang.
 
+Tekan **F10** atau tombol **Pause / Pengaturan** untuk menghentikan aksi dan mengatur volume, layar penuh, serta kualitas efek. Pengaturan tersimpan bersama progres lokal.
+
 ## Arah proyek ini
 
 README ini menjelaskan game yang menjadi inspirasi dan gambaran arah desain; mekanik di atas **belum diimplementasikan** di proyek ini. Tujuannya adalah membuat game strategi taktis berbasis giliran untuk PC dengan identitas dan aset orisinal, bukan menyalin materi milik game aslinya.

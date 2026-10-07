@@ -106,6 +106,10 @@ var campaign_atk_bonus := 0
 var bonus_unit_pending := false
 var endless_mode := false
 var endless_high_score := 100
+var paused := false
+var volume_level := 0
+var effects_enabled := true
+var fullscreen_enabled := false
 var in_main_menu := true
 var has_started := false
 var save_path := "user://campaign.cfg"
@@ -116,6 +120,8 @@ var next_btn: Button
 var start_btn: Button
 var new_campaign_btn: Button
 var menu_btn: Button
+var settings_btn: Button
+var settings_buttons := []
 var reward_buttons := []
 var build_buttons := []
 var close_menu_btn: Button
@@ -260,6 +266,15 @@ func _build_ui() -> void:
 	menu_btn = _make_button("Menu Utama  (Esc)", Vector2(1040, 24), Vector2(200, 46))
 	menu_btn.add_theme_font_size_override("font_size", 16)
 	menu_btn.pressed.connect(_show_main_menu)
+	settings_btn = _make_button("Pause / Pengaturan  (F10)", Vector2(790, 24), Vector2(235, 46))
+	settings_btn.add_theme_font_size_override("font_size", 15)
+	settings_btn.pressed.connect(_toggle_pause)
+	var settings_defs := [["resume", "Lanjutkan"], ["volume", "Volume: 100%"], ["fullscreen", "Layar Penuh: Mati"], ["quality", "Efek: Tinggi"]]
+	for i in settings_defs.size():
+		var btn := _make_button(settings_defs[i][1], Vector2(440, 310 + i * 62), Vector2(400, 50))
+		btn.visible = false
+		btn.pressed.connect(_settings_action.bind(settings_defs[i][0]))
+		settings_buttons.append(btn)
 	end_turn_btn = _make_button("Akhiri Giliran  (E)", Vector2(panel_x + 30, 545), Vector2(420, 58))
 	end_turn_btn.pressed.connect(_on_end_turn_pressed)
 	restart_btn = _make_button("Coba Lagi  (R)", Vector2(panel_x + 30, 545), Vector2(420, 58))
@@ -338,6 +353,9 @@ func _save_progress() -> void:
 	save.set_value("campaign", "bonus_unit_pending", bonus_unit_pending)
 	save.set_value("campaign", "endless_mode", endless_mode)
 	save.set_value("campaign", "endless_high_score", endless_high_score)
+	save.set_value("settings", "volume_level", volume_level)
+	save.set_value("settings", "effects_enabled", effects_enabled)
+	save.set_value("settings", "fullscreen", fullscreen_enabled)
 	save.set_value("battle", "turn", turn)
 	save.set_value("battle", "game_over", game_over)
 	save.set_value("battle", "victory", victory)
@@ -362,6 +380,10 @@ func _load_progress() -> bool:
 		return false
 	endless_mode = bool(save.get_value("campaign", "endless_mode", false))
 	endless_high_score = maxi(int(save.get_value("campaign", "endless_high_score", 100)), 100)
+	volume_level = clampi(int(save.get_value("settings", "volume_level", 0)), 0, 2)
+	effects_enabled = bool(save.get_value("settings", "effects_enabled", true))
+	fullscreen_enabled = bool(save.get_value("settings", "fullscreen", false))
+	_apply_settings()
 	stage = maxi(int(save.get_value("campaign", "stage", 1)), 1) if endless_mode else clampi(int(save.get_value("campaign", "stage", 1)), 1, MAX_STAGE)
 	player_gold = maxi(int(save.get_value("campaign", "gold", 200)), 0)
 	campaign_hp_bonus = maxi(int(save.get_value("campaign", "hp_bonus", 0)), 0)
@@ -509,15 +531,22 @@ func _refresh_ui() -> void:
 		new_campaign_btn.position = Vector2(start_btn.position.x, start_btn.position.y + 66)
 		new_campaign_btn.visible = has_started
 		menu_btn.visible = false
+		settings_btn.visible = false
 		end_turn_btn.visible = false
 		restart_btn.visible = false
 		next_btn.visible = false
 		for btn in reward_buttons:
 			btn.visible = false
+		for btn in settings_buttons:
+			btn.visible = false
 		return
 	start_btn.visible = false
 	new_campaign_btn.visible = false
 	menu_btn.visible = true
+	settings_btn.visible = not game_over
+	settings_btn.disabled = turn != 0 or animating
+	for btn in settings_buttons:
+		btn.visible = paused
 	if game_over:
 		end_turn_btn.visible = false
 		next_btn.visible = victory and not campaign_won and not reward_pending
@@ -531,7 +560,7 @@ func _refresh_ui() -> void:
 		restart_btn.position = result_button_pos
 	else:
 		end_turn_btn.position = Vector2(790, 545)
-		end_turn_btn.visible = true
+		end_turn_btn.visible = not paused
 		end_turn_btn.disabled = turn != 0 or animating
 		next_btn.visible = false
 		restart_btn.visible = false
@@ -566,13 +595,24 @@ func _draw() -> void:
 	_draw_highlights()
 	_draw_buildings()
 	_draw_units()
-	_draw_attack_fx()
-	_draw_defeat_fx()
+	if effects_enabled:
+		_draw_attack_fx()
+		_draw_defeat_fx()
 	_draw_hud()
 	_draw_build_menu()
 	_draw_floaters()
 	if game_over:
 		_draw_result_overlay()
+	elif paused:
+		_draw_pause_overlay()
+
+
+func _draw_pause_overlay() -> void:
+	draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), Color(0.01, 0.02, 0.05, 0.78), true)
+	var card := Rect2(Vector2(390, 190), Vector2(500, 390))
+	draw_style_box(sb_result, card)
+	_draw_centered("PERMAINAN DI-PAUSE", Rect2(card.position + Vector2(0, 35), Vector2(card.size.x, 50)), 30, TEXT_COL)
+	_draw_centered("Atur permainan lalu lanjutkan pertempuran", Rect2(card.position + Vector2(0, 88), Vector2(card.size.x, 30)), 15, MUTED_COL)
 
 
 func _draw_background() -> void:
@@ -871,6 +911,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.keycode == KEY_ENTER:
 				_enter_game()
 			return
+		if event.keycode == KEY_F10:
+			_toggle_pause()
+			return
+		if paused:
+			if event.keycode == KEY_ESCAPE:
+				_toggle_pause()
+			return
 		if event.keycode == KEY_ESCAPE:
 			_show_main_menu()
 			return
@@ -905,7 +952,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_click(cell: Vector2i) -> void:
-	if in_main_menu or game_over or turn != 0:
+	if in_main_menu or paused or game_over or turn != 0:
 		return
 	if not _in_bounds(cell):
 		return
@@ -1121,7 +1168,7 @@ func _compute_attackable(unit: Unit) -> Dictionary:
 
 
 func _on_end_turn_pressed() -> void:
-	if game_over or turn != 0 or animating:
+	if paused or game_over or turn != 0 or animating:
 		return
 	selected = null
 	reachable = {}
@@ -1389,12 +1436,55 @@ func _start_new_campaign() -> void:
 
 
 func _show_main_menu() -> void:
+	paused = false
 	in_main_menu = true
 	_close_build_menu()
 	if turn == 0 or game_over:
 		_save_progress()
 	_refresh_ui()
 	queue_redraw()
+
+
+func _toggle_pause() -> void:
+	if in_main_menu or game_over or turn != 0 or animating:
+		return
+	paused = not paused
+	_refresh_settings_labels()
+	_refresh_ui()
+	queue_redraw()
+
+
+func _settings_action(action: String) -> void:
+	match action:
+		"resume":
+			_toggle_pause()
+			return
+		"volume": volume_level = (volume_level + 1) % 3
+		"fullscreen": fullscreen_enabled = not fullscreen_enabled
+		"quality": effects_enabled = not effects_enabled
+	_apply_settings()
+	_refresh_settings_labels()
+	_save_progress()
+	queue_redraw()
+
+
+func _apply_settings() -> void:
+	if music_player == null:
+		return
+	var music_levels := [-16.0, -26.0, -80.0]
+	var sfx_levels := [-4.0, -12.0, -80.0]
+	music_player.volume_db = music_levels[volume_level]
+	sfx_player.volume_db = sfx_levels[volume_level]
+	if DisplayServer.get_name() != "headless":
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen_enabled else DisplayServer.WINDOW_MODE_WINDOWED)
+
+
+func _refresh_settings_labels() -> void:
+	if settings_buttons.is_empty():
+		return
+	settings_buttons[1].text = "Volume: %s" % ["100%", "50%", "Mati"][volume_level]
+	settings_buttons[2].text = "Layar Penuh: %s" % ("Aktif" if fullscreen_enabled else "Mati")
+	settings_buttons[3].text = "Efek: %s" % ("Tinggi" if effects_enabled else "Hemat")
 
 
 func _unit_at(cell: Vector2i) -> Unit:

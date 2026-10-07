@@ -48,12 +48,12 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 - [x] Suara kemenangan dan naga.
 - [x] Animasi unit kalah.
 
-## 7. Pengaturan `[ ]`
+## 7. Pengaturan `[x]`
 
-- [ ] Pengaturan volume musik dan efek suara.
-- [ ] Tombol layar penuh.
-- [ ] Pilihan kualitas grafis.
-- [ ] Menu pause.
+- [x] Pengaturan volume musik dan efek suara.
+- [x] Tombol layar penuh.
+- [x] Pilihan kualitas efek grafis.
+- [x] Menu pause.
 
 ## 8. Mode endless `[x]`
 
@@ -63,4 +63,4 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 
 ## Urutan pengerjaan berikutnya
 
-1. Tambahkan pengaturan dan pause.
+Semua fitur utama dalam daftar ini sudah selesai.

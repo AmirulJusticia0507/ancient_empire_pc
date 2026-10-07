@@ -12,6 +12,13 @@ func _ready() -> void:
 	main._enter_game()
 	_assert(not main.in_main_menu, "tombol mulai membuka permainan")
 	_assert(main.music_player.stream != null and main.sounds.size() == 4, "musik dan efek suara tersedia")
+	main._toggle_pause()
+	_assert(main.paused, "menu pause dapat dibuka")
+	main._settings_action("volume")
+	main._settings_action("quality")
+	_assert(main.volume_level == 1 and not main.effects_enabled, "pengaturan volume dan kualitas berubah")
+	main._settings_action("resume")
+	_assert(not main.paused, "permainan dapat dilanjutkan")
 	main.stage = 7
 	main.player_gold = 345
 	main.units[0].hp = 3
