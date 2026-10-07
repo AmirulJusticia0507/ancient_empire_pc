@@ -15,6 +15,10 @@ const PANEL_LINE := Color("#334155")
 const TILE_A := Color("#1e293b")
 const TILE_B := Color("#243244")
 const TILE_HOVER := Color("#2f4058")
+const GRASS_A := Color("#214336")
+const GRASS_B := Color("#28503d")
+const WATER := Color("#173b59")
+const ROAD := Color("#5b4a36")
 const ACCENT := Color("#38bdf8")
 const ACCENT_WARM := Color("#fbbf24")
 const PLAYER_COL := Color("#3b82f6")
@@ -109,6 +113,10 @@ func _load_textures() -> void:
 var sb_board: StyleBoxFlat
 var sb_tile_a: StyleBoxFlat
 var sb_tile_b: StyleBoxFlat
+var sb_grass_a: StyleBoxFlat
+var sb_grass_b: StyleBoxFlat
+var sb_water: StyleBoxFlat
+var sb_road: StyleBoxFlat
 var sb_hover: StyleBoxFlat
 var sb_move: StyleBoxFlat
 var sb_attack: StyleBoxFlat
@@ -116,6 +124,7 @@ var sb_hud: StyleBoxFlat
 var sb_pill_player: StyleBoxFlat
 var sb_pill_enemy: StyleBoxFlat
 var sb_pill_over: StyleBoxFlat
+var sb_result: StyleBoxFlat
 
 
 func _ready() -> void:
@@ -132,6 +141,10 @@ func _build_styleboxes() -> void:
 	sb_board = _make_box(PANEL_BG, 22, 1, PANEL_LINE, 16, Color(0, 0, 0, 0.45))
 	sb_tile_a = _make_box(TILE_A, 12)
 	sb_tile_b = _make_box(TILE_B, 12)
+	sb_grass_a = _make_box(GRASS_A, 12)
+	sb_grass_b = _make_box(GRASS_B, 12)
+	sb_water = _make_box(WATER, 12, 1, Color("#25658a"))
+	sb_road = _make_box(ROAD, 12)
 	sb_hover = _make_box(TILE_HOVER, 12, 2, ACCENT)
 	sb_move = _make_box(Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.22), 12, 1, Color(ACCENT.r, ACCENT.g, ACCENT.b, 0.55))
 	sb_attack = _make_box(Color(ENEMY_COL.r, ENEMY_COL.g, ENEMY_COL.b, 0.20), 12, 2, Color(ENEMY_COL.r, ENEMY_COL.g, ENEMY_COL.b, 0.8))
@@ -139,6 +152,7 @@ func _build_styleboxes() -> void:
 	sb_pill_player = _make_box(Color(PLAYER_COL.r, PLAYER_COL.g, PLAYER_COL.b, 0.22), 18, 1, PLAYER_COL)
 	sb_pill_enemy = _make_box(Color(ENEMY_COL.r, ENEMY_COL.g, ENEMY_COL.b, 0.22), 18, 1, ENEMY_COL)
 	sb_pill_over = _make_box(Color(ACCENT_WARM.r, ACCENT_WARM.g, ACCENT_WARM.b, 0.22), 18, 1, ACCENT_WARM)
+	sb_result = _make_box(Color(0.035, 0.055, 0.10, 0.98), 26, 2, ACCENT_WARM, 28, Color(0, 0, 0, 0.72))
 
 
 func _make_box(bg: Color, radius: int, border := 0, border_col := Color(0, 0, 0, 0), shadow := 0, shadow_col := Color(0, 0, 0, 0)) -> StyleBoxFlat:
@@ -271,7 +285,11 @@ func _refresh_ui() -> void:
 		next_btn.visible = victory and not campaign_won
 		restart_btn.visible = not next_btn.visible
 		restart_btn.text = "Main Lagi  (R)" if campaign_won else "Coba Lagi  (R)"
+		var result_button_pos := Vector2(440, 500)
+		next_btn.position = result_button_pos
+		restart_btn.position = result_button_pos
 	else:
+		end_turn_btn.position = Vector2(790, 545)
 		end_turn_btn.visible = true
 		end_turn_btn.disabled = turn != 0 or animating
 		next_btn.visible = false
@@ -299,6 +317,8 @@ func _draw() -> void:
 	_draw_hud()
 	_draw_build_menu()
 	_draw_floaters()
+	if game_over:
+		_draw_result_overlay()
 
 
 func _draw_background() -> void:
@@ -306,16 +326,49 @@ func _draw_background() -> void:
 	var pts := PackedVector2Array([Vector2.ZERO, Vector2(vs.x, 0), vs, Vector2(0, vs.y)])
 	var cols := PackedColorArray([BG_TOP, BG_TOP, BG_BOTTOM, BG_BOTTOM])
 	draw_polygon(pts, cols)
+	# Soft atmospheric glows keep the battlefield from feeling like a flat UI grid.
+	draw_circle(Vector2(170, 90), 230, Color(0.05, 0.40, 0.36, 0.10))
+	draw_circle(Vector2(1110, 650), 310, Color(0.12, 0.28, 0.55, 0.10))
 
 
 func _draw_tiles() -> void:
 	for y in GRID_H:
 		for x in GRID_W:
 			var cell := Vector2i(x, y)
+			var terrain := _terrain_at(cell)
 			var sb := sb_tile_a if (x + y) % 2 == 0 else sb_tile_b
+			if terrain == "grass":
+				sb = sb_grass_a if (x + y) % 2 == 0 else sb_grass_b
+			elif terrain == "water":
+				sb = sb_water
+			elif terrain == "road":
+				sb = sb_road
 			if cell == hovered and not game_over and turn == 0:
 				sb = sb_hover
 			draw_style_box(sb, _cell_rect(cell))
+			_draw_terrain_detail(cell, terrain)
+
+
+func _terrain_at(cell: Vector2i) -> String:
+	if cell in [Vector2i(3, 0), Vector2i(4, 0), Vector2i(4, 1), Vector2i(8, 3)]:
+		return "water"
+	if cell.y == 3 or cell in [Vector2i(2, 2), Vector2i(6, 4)]:
+		return "road"
+	return "grass"
+
+
+func _draw_terrain_detail(cell: Vector2i, terrain: String) -> void:
+	var rect := _cell_rect(cell)
+	var center := rect.get_center()
+	if terrain == "water":
+		for i in 2:
+			var y := center.y - 9.0 + i * 17.0
+			draw_line(Vector2(center.x - 20, y), Vector2(center.x + 20, y), Color(0.25, 0.68, 0.84, 0.35), 2.0)
+	elif terrain == "road":
+		draw_line(Vector2(rect.position.x + 10, center.y), Vector2(rect.end.x - 10, center.y), Color(0.83, 0.68, 0.45, 0.20), 3.0)
+	elif (cell.x * 7 + cell.y * 11) % 4 == 0:
+		for offset in [-7.0, 0.0, 7.0]:
+			draw_line(center + Vector2(offset, 18), center + Vector2(offset + 3, 10), Color(0.35, 0.68, 0.42, 0.32), 1.5)
 
 
 func _draw_highlights() -> void:
@@ -420,15 +473,40 @@ func _draw_hud() -> void:
 	_draw_text("MUSUH", Vector2(790, 330), 14, MUTED_COL)
 	_draw_team_stat(1, Vector2(790, 340))
 
-	_draw_text("CHEAT", Vector2(790, 445), 14, MUTED_COL)
-	_draw_text("K  hapus semua musuh      H  pulihkan penuh", Vector2(790, 468), 14, Color(0.75, 0.73, 0.68))
-	_draw_text("G  mode kebal               M  gerak lagi", Vector2(790, 490), 14, Color(0.75, 0.73, 0.68))
-	_draw_text("P  +5 ATK", Vector2(790, 512), 14, Color(0.75, 0.73, 0.68))
+	_draw_text("TUJUAN MISI", Vector2(790, 445), 14, MUTED_COL)
+	_draw_text("Kalahkan seluruh pasukan musuh", Vector2(790, 474), 19, TEXT_COL)
+	_draw_text("Menangkan 4 pertempuran untuk menaklukkan naga.", Vector2(790, 500), 13, MUTED_COL)
 	if god_mode:
-		_draw_text("GOD MODE AKTIF", Vector2(1120, 512), 14, ACCENT)
+		_draw_text("GOD MODE AKTIF", Vector2(1080, 522), 14, ACCENT)
 
 	if game_over:
-		_draw_centered("Tekan R atau tombol Mulai Ulang", Rect2(Vector2(760, 578), Vector2(480, 30)), 18, ACCENT_WARM)
+		_draw_centered("Hasil pertempuran ditampilkan di arena", Rect2(Vector2(760, 578), Vector2(480, 30)), 16, ACCENT_WARM)
+
+
+func _draw_result_overlay() -> void:
+	var viewport_size := get_viewport_rect().size
+	draw_rect(Rect2(Vector2.ZERO, viewport_size), Color(0.01, 0.02, 0.05, 0.72), true)
+	var card := Rect2(Vector2(320, 190), Vector2(560, 410))
+	draw_style_box(sb_result, card)
+	var color := ACCENT_WARM if victory else ENEMY_COL
+	var badge := "KEMENANGAN" if victory else "PERTEMPURAN KALAH"
+	var title := "Kerajaan Diselamatkan!" if campaign_won else ("Medan Tempur Dikuasai" if victory else "Pasukanmu Tumbang")
+	var detail := "Naga telah dikalahkan. Kampanye selesai." if campaign_won else ("Pertempuran %d/%d selesai. Bersiap ke wilayah berikutnya." % [stage, MAX_STAGE] if victory else "Susun ulang strategi dan coba pertempuran ini lagi.")
+	_draw_centered(badge, Rect2(card.position + Vector2(0, 38), Vector2(card.size.x, 30)), 16, color)
+	_draw_centered(title, Rect2(card.position + Vector2(0, 88), Vector2(card.size.x, 54)), 34, TEXT_COL)
+	_draw_centered(detail, Rect2(card.position + Vector2(30, 150), Vector2(card.size.x - 60, 36)), 17, MUTED_COL)
+	_draw_centered("Sisa pasukan  %d    |    Gold  %d" % [_team_count(0), player_gold], Rect2(card.position + Vector2(40, 205), Vector2(card.size.x - 80, 36)), 18, TEXT_COL)
+	if victory:
+		for x in [70.0, 120.0, 440.0, 490.0]:
+			draw_circle(card.position + Vector2(x, 72 + fmod(x, 37)), 4, Color(color, 0.8))
+
+
+func _team_count(team: int) -> int:
+	var count := 0
+	for unit in units:
+		if unit.team == team:
+			count += 1
+	return count
 
 
 func _draw_team_stat(team: int, top_left: Vector2) -> void:
