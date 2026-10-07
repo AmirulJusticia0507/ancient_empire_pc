@@ -107,10 +107,12 @@ var close_menu_btn: Button
 var font: Font
 var unit_tex := {}
 var battlefield_tex: Texture2D
+var menu_hero_tex: Texture2D
 
 
 func _load_textures() -> void:
 	battlefield_tex = load("res://assets/backgrounds/fantasy_battlefield.png")
+	menu_hero_tex = load("res://assets/backgrounds/dragon_vs_army.png")
 	unit_tex["soldier"] = load("res://assets/icons/soldier.svg")
 	unit_tex["archer"] = load("res://assets/icons/archer.svg")
 	unit_tex["brute"] = load("res://assets/icons/brute.svg")
@@ -308,7 +310,7 @@ func _refresh_ui() -> void:
 	if in_main_menu:
 		var menu_card := _menu_card_rect()
 		start_btn.size = Vector2(minf(560.0, menu_card.size.x - 40.0), 72)
-		start_btn.position = Vector2(menu_card.position.x + (menu_card.size.x - start_btn.size.x) * 0.5, menu_card.position.y + menu_card.size.y * 0.76)
+		start_btn.position = Vector2(menu_card.position.x + (menu_card.size.x - start_btn.size.x) * 0.5, menu_card.position.y + menu_card.size.y * 0.82)
 		start_btn.visible = true
 		start_btn.text = "Lanjutkan Pertempuran  (Enter)" if has_started else "Mulai Kampanye  (Enter)"
 		menu_btn.visible = false
@@ -383,11 +385,15 @@ func _draw_background() -> void:
 func _draw_main_menu() -> void:
 	var card := _menu_card_rect()
 	draw_style_box(_make_box(Color(0.025, 0.045, 0.085, 0.90), 30, 1, Color(0.36, 0.54, 0.72, 0.7), 28, Color(0, 0, 0, 0.7)), card)
-	_draw_centered("ANCIENT EMPIRE", Rect2(card.position + Vector2(0, card.size.y * 0.13), Vector2(card.size.x, 70)), 52, TEXT_COL)
-	_draw_centered("BANGKITNYA NAGA ABADI", Rect2(card.position + Vector2(0, card.size.y * 0.24), Vector2(card.size.x, 34)), 20, ACCENT_WARM)
-	_draw_centered("Pimpin pasukanmu melewati 100 medan pertempuran", Rect2(card.position + Vector2(20, card.size.y * 0.42), Vector2(card.size.x - 40, 34)), 20, TEXT_COL)
-	_draw_centered("Taklukkan panglima, bangun pasukan, dan selamatkan kerajaan.", Rect2(card.position + Vector2(20, card.size.y * 0.49), Vector2(card.size.x - 40, 30)), 16, MUTED_COL)
-	_draw_centered("Strategi berbasis giliran  •  Boss tiap 10 level", Rect2(card.position + Vector2(20, card.size.y * 0.61), Vector2(card.size.x - 40, 28)), 15, Color(0.66, 0.76, 0.86))
+	_draw_centered("ANCIENT EMPIRE", Rect2(card.position + Vector2(0, card.size.y * 0.05), Vector2(card.size.x, 70)), 52, TEXT_COL)
+	_draw_centered("BANGKITNYA NAGA ABADI", Rect2(card.position + Vector2(0, card.size.y * 0.15), Vector2(card.size.x, 34)), 20, ACCENT_WARM)
+	if menu_hero_tex != null:
+		var hero_size := Vector2(card.size.x * 0.56, card.size.y * 0.34)
+		var hero_pos := card.position + Vector2((card.size.x - hero_size.x) * 0.5, card.size.y * 0.22)
+		draw_texture_rect(menu_hero_tex, Rect2(hero_pos, hero_size), false)
+	_draw_centered("KERAJAAN BERDIRI DI AMBANG KEHANCURAN", Rect2(card.position + Vector2(20, card.size.y * 0.60), Vector2(card.size.x - 40, 30)), 17, ACCENT_WARM)
+	_draw_centered("Bangkitkan pasukan. Rebut kembali benteng. Hadapi Naga Abadi.", Rect2(card.position + Vector2(20, card.size.y * 0.66), Vector2(card.size.x - 40, 34)), 20, TEXT_COL)
+	_draw_centered("100 medan tempur  •  Panglima tiap 10 level  •  Satu takdir kerajaan", Rect2(card.position + Vector2(20, card.size.y * 0.73), Vector2(card.size.x - 40, 28)), 15, MUTED_COL)
 
 
 func _menu_card_rect() -> Rect2:
