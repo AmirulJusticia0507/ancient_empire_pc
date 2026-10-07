@@ -1,8 +1,8 @@
 extends Node2D
 
-const GRID_W := 9
-const GRID_H := 6
-const TILE := 74
+const GRID_W := 11
+const GRID_H := 8
+const TILE := 58
 const ORIGIN := Vector2(70, 170)
 const MOVE_RANGE := 3
 const ATTACK_RANGE := 1
@@ -39,7 +39,6 @@ const KILL_REWARD := 50
 const CAPTURE_REWARD := 100
 const MAX_STAGE := 100
 const REGIONS := ["Bukit Zamrud", "Hutan Kabut", "Rawa Sunyi", "Gurun Bara", "Pesisir Badai", "Dataran Beku", "Lembah Bayangan", "Benteng Langit", "Tanah Terlarang"]
-const ENEMY_SPOTS := [Vector2i(7, 0), Vector2i(7, 2), Vector2i(6, 3), Vector2i(7, 5), Vector2i(6, 1), Vector2i(5, 4)]
 
 
 class Building:
@@ -246,10 +245,10 @@ func _start_campaign() -> void:
 	_setup_battle()
 
 
-func _stage_enemies(s: int) -> Array:
+func _stage_enemies(s: int, requested_count := -1) -> Array:
 	var list := []
 	var tier := (s - 1) / 10
-	var enemy_count := mini(4 + (s - 1) / 20, ENEMY_SPOTS.size())
+	var enemy_count := mini(5 + (s - 1) / 20, 8) if requested_count < 0 else requested_count
 	var is_boss := s % 10 == 0
 	if is_boss:
 		var final_boss := s == MAX_STAGE
@@ -275,22 +274,33 @@ func _stage_title(s: int) -> String:
 
 func _setup_battle() -> void:
 	units.clear()
+	buildings.clear()
+	buildings.append(Building.new(Vector2i(0, 0), MARKET, 0))
+	buildings.append(Building.new(Vector2i(0, GRID_H - 1), BARRACKS, 0))
+	buildings.append(Building.new(Vector2i(GRID_W - 1, 0), BARRACKS, 1))
+	buildings.append(Building.new(Vector2i(GRID_W - 1, GRID_H - 1), MARKET, 1))
+	var player_cells := []
+	var enemy_cells := []
+	for y in GRID_H:
+		for x in range(1, 4):
+			player_cells.append(Vector2i(x, y))
+		for x in range(GRID_W - 4, GRID_W - 1):
+			enemy_cells.append(Vector2i(x, y))
+	player_cells.shuffle()
+	enemy_cells.shuffle()
 	var player_tier := (stage - 1) / 10
-	units.append(Unit.new(Vector2i(1, 1), 0, 14 + player_tier * 4, 4 + player_tier, "soldier"))
-	units.append(Unit.new(Vector2i(1, 4), 0, 14 + player_tier * 4, 4 + player_tier, "soldier"))
-	units.append(Unit.new(Vector2i(2, 2), 0, 12 + player_tier * 4, 5 + player_tier, "soldier"))
-	var enemies := _stage_enemies(stage)
+	var player_count := randi_range(3, 5)
+	for i in player_count:
+		var archer := i % 3 == 2
+		units.append(Unit.new(player_cells[i], 0, (10 if archer else 14) + player_tier * 4, (6 if archer else 4) + player_tier, "archer" if archer else "soldier", MOVE_RANGE, 2 if archer else 1))
+	var enemy_count := mini(5 + (stage - 1) / 20 + randi_range(0, 1), 8)
+	var enemies := _stage_enemies(stage, enemy_count)
 	for i in enemies.size():
 		var e: Dictionary = enemies[i]
-		var pos: Vector2i = ENEMY_SPOTS[i % ENEMY_SPOTS.size()]
+		var pos: Vector2i = enemy_cells[i]
 		units.append(Unit.new(pos, 1, e.hp, e.atk, e.kind, e.get("mr", MOVE_RANGE), e.get("ar", ATTACK_RANGE)))
 	for u in units:
 		u.visual_pos = _cell_center(u.pos)
-	buildings.clear()
-	buildings.append(Building.new(Vector2i(0, 0), MARKET, 0))
-	buildings.append(Building.new(Vector2i(0, 5), BARRACKS, 0))
-	buildings.append(Building.new(Vector2i(8, 0), BARRACKS, 1))
-	buildings.append(Building.new(Vector2i(8, 5), MARKET, 1))
 	selected = null
 	reachable = {}
 	attackable = {}
@@ -429,9 +439,9 @@ func _draw_tiles() -> void:
 
 
 func _terrain_at(cell: Vector2i) -> String:
-	if cell in [Vector2i(3, 0), Vector2i(4, 0), Vector2i(4, 1), Vector2i(8, 3)]:
+	if cell in [Vector2i(4, 0), Vector2i(5, 0), Vector2i(5, 1), Vector2i(9, 5), Vector2i(4, 6)]:
 		return "water"
-	if cell.y == 3 or cell in [Vector2i(2, 2), Vector2i(6, 4)]:
+	if cell.y == 4 or cell in [Vector2i(3, 3), Vector2i(7, 5)]:
 		return "road"
 	return "grass"
 

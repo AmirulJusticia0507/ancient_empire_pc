@@ -9,22 +9,31 @@ func _ready() -> void:
 	_assert(is_equal_approx(main.start_btn.position.x + main.start_btn.size.x * 0.5, main.get_viewport_rect().size.x * 0.5), "tombol mulai berada di tengah")
 	main._enter_game()
 	_assert(not main.in_main_menu, "tombol mulai membuka permainan")
-	_assert(main.units.size() == 7, "jumlah unit awal")
+	var initial_players = main.units.filter(func(u): return u.team == 0).size()
+	var initial_enemies = main.units.filter(func(u): return u.team == 1).size()
+	_assert(initial_players >= 3 and initial_players <= 5, "pemain mulai dengan 3-5 unit")
+	_assert(initial_enemies >= 5 and initial_enemies <= 6, "musuh mulai dengan 5-6 unit")
+	var initial_positions := {}
+	for u in main.units:
+		initial_positions[u.pos] = true
+	_assert(initial_positions.size() == main.units.size(), "posisi awal unit tidak bertumpuk")
 	_assert(main.turn == 0, "mulai di giliran pemain")
 
-	main._on_click(Vector2i(1, 1))
+	var first_player = main.units[0]
+	main._on_click(first_player.pos)
 	await get_tree().process_frame
 	_assert(main.selected != null, "unit terpilih")
 	_assert(main.reachable.size() > 1, "petak gerak dihitung")
 
-	main._on_click(Vector2i(1, 2))
+	var move_target = first_player.pos
+	for cell in main.reachable.keys():
+		if cell != first_player.pos:
+			move_target = cell
+			break
+	main._on_click(move_target)
 	await get_tree().create_timer(0.6).timeout
 	_assert(main.selected == null, "seleksi dilepas setelah gerak")
-	var moved = false
-	for u in main.units:
-		if u.pos == Vector2i(1, 2):
-			moved = true
-	_assert(moved, "unit berpindah ke petak tujuan")
+	_assert(first_player.pos == move_target, "unit berpindah ke petak tujuan")
 
 	main._on_end_turn_pressed()
 	_assert(main.turn == 1, "giliran musuh dimulai")
@@ -32,7 +41,7 @@ func _ready() -> void:
 	_assert(main.turn == 0, "giliran kembali ke pemain")
 
 	main._restart()
-	_assert(main.units.size() == 7 and main.turn == 0, "restart mengembalikan state")
+	_assert(main.units.size() >= 8 and main.units.size() <= 11 and main.turn == 0, "restart mengacak state awal")
 	main._show_main_menu()
 	_assert(main.in_main_menu, "permainan bisa kembali ke menu utama")
 	main._enter_game()
@@ -51,7 +60,7 @@ func _ready() -> void:
 	_assert(main.units[0].atk == 6, "asah menambah ATK +2")
 	main._close_build_menu()
 	var captured_building = main.buildings[2]
-	main.units[0].pos = Vector2i(8, 1)
+	main.units[0].pos = Vector2i(main.GRID_W - 1, 1)
 	main.units[0].visual_pos = main._cell_center(main.units[0].pos)
 	main.selected = main.units[0]
 	var capture_gold_before = main.player_gold
@@ -78,7 +87,7 @@ func _ready() -> void:
 
 	main._next_stage()
 	_assert(main.stage == 2, "lanjut ke pertempuran 2")
-	_assert(main.units.size() == 7, "jumlah unit level 2 sesuai kapasitas")
+	_assert(main.units.size() >= 8 and main.units.size() <= 11, "jumlah unit level 2 diacak")
 	_assert(main._stage_enemies(2)[0].hp > main._stage_enemies(1)[0].hp, "musuh makin kuat setiap level")
 
 	main.stage = 100
@@ -89,8 +98,9 @@ func _ready() -> void:
 			has_dragon = true
 	_assert(has_dragon, "level 100 menampilkan naga final")
 	_assert(main._stage_enemies(10)[0].kind == "warlord", "boss muncul setiap 10 level")
-	_assert(main._stage_enemies(100).size() <= main.ENEMY_SPOTS.size(), "musuh tidak bertumpuk")
-	main._attack(main.units[0], main.units[3])
+	_assert(main._stage_enemies(100).size() <= 8, "jumlah musuh sesuai kapasitas")
+	var final_enemy = main.units.filter(func(u): return u.team == 1)[0]
+	main._attack(main.units[0], final_enemy)
 	_assert(main.attack_fx.size() == 1, "serangan memunculkan efek petir")
 	main._cheat_kill_all()
 	_assert(main.campaign_won, "menang level 100 menamatkan kampanye")

@@ -140,7 +140,7 @@ Lalu buka http://localhost:8060 di browser.
 
 ### Kampanye dan musuh
 
-Permainan berjalan sebagai kampanye **100 level**. Setiap kemenangan membuka level berikutnya; statistik pemain dan musuh meningkat tiap 10 level, jumlah musuh bertambah bertahap, dan sisa gold tetap terbawa plus bonus.
+Permainan berjalan sebagai kampanye **100 level** di papan 11×8 petak. Setiap pertempuran mengacak posisi dan jumlah awal: pemain membawa 3–5 unit, sementara musuh membawa 5–8 unit sesuai level. Setiap kemenangan membuka level berikutnya; statistik pemain dan musuh meningkat tiap 10 level, dan sisa gold tetap terbawa plus bonus.
 
 Setiap level ke-10 menghadirkan boss **warlord** beserta pasukannya. Level 100 adalah pertarungan final melawan **Naga Abadi**, yang dapat menyerang dari jarak 2 petak. Menang di level 100 menuntaskan kampanye. Tekan **N** (atau tombol *Lanjut*) untuk maju; **R** untuk mengulang level saat kalah atau memulai kampanye baru setelah tamat.
 
