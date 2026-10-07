@@ -18,12 +18,12 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 - [x] Tujuan bertahan selama beberapa giliran.
 - [x] Tujuan melindungi unit penting.
 
-## 3. Hadiah setelah menang `[-]`
+## 3. Hadiah setelah menang `[x]`
 
 - [x] Bonus gold otomatis setelah menang.
 - [x] Gold dari mengalahkan musuh dan mengudeta bangunan.
-- [ ] Layar pilihan hadiah: HP, ATK, gold, atau unit baru.
-- [ ] Terapkan pilihan hadiah ke level berikutnya.
+- [x] Layar pilihan hadiah: HP, ATK, gold, atau unit baru.
+- [x] Terapkan pilihan hadiah ke level berikutnya.
 
 ## 4. AI lebih pintar `[-]`
 
@@ -63,9 +63,8 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 
 ## Urutan pengerjaan berikutnya
 
-1. Tambahkan pilihan hadiah kemenangan.
-2. Tingkatkan AI.
-3. Aktifkan efek terrain.
-4. Tambahkan audio dan animasi lanjutan.
-5. Tambahkan pengaturan dan pause.
-6. Tambahkan mode endless.
+1. Tingkatkan AI.
+2. Aktifkan efek terrain.
+3. Tambahkan audio dan animasi lanjutan.
+4. Tambahkan pengaturan dan pause.
+5. Tambahkan mode endless.

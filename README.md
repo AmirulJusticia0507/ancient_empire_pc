@@ -148,6 +148,8 @@ Setiap level ke-10 menghadirkan boss **warlord** beserta pasukannya. Level 100 a
 
 Tujuan misi berganti antarlevel: mengalahkan seluruh musuh, mengudeta barak utama, bertahan selama beberapa ronde, atau melindungi komandan bertanda bintang. Level boss dimenangkan segera setelah boss dikalahkan.
 
+Setelah menang, pilih satu hadiah sebelum melanjutkan: bonus permanen **+2 HP**, **+1 ATK**, **250 gold**, atau satu prajurit tambahan pada level berikutnya.
+
 ### Bangunan dan ekonomi
 
 Di peta terdapat bangunan milik masing-masing pihak (menghalangi pergerakan). Saat giliranmu, **klik bangunanmu** untuk membuka menunya:

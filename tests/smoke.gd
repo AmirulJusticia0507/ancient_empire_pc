@@ -106,6 +106,10 @@ func _ready() -> void:
 	main._cheat_kill_all()
 	_assert(main.game_over, "cheat hapus semua musuh memicu kemenangan")
 	_assert(main.victory, "kemenangan tercatat")
+	_assert(main.reward_pending, "kemenangan meminta pilihan hadiah")
+	var reward_gold_before = main.player_gold
+	main._choose_reward("gold")
+	_assert(main.player_gold == reward_gold_before + 250 and not main.reward_pending, "hadiah gold diterapkan")
 
 	main._next_stage()
 	_assert(main.stage == 2, "lanjut ke pertempuran 2")

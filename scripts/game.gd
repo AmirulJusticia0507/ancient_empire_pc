@@ -99,6 +99,10 @@ var stage_title := ""
 var objective := "eliminate"
 var rounds_survived := 0
 var survival_target := 0
+var reward_pending := false
+var campaign_hp_bonus := 0
+var campaign_atk_bonus := 0
+var bonus_unit_pending := false
 var in_main_menu := true
 var has_started := false
 var save_path := "user://campaign.cfg"
@@ -109,6 +113,7 @@ var next_btn: Button
 var start_btn: Button
 var new_campaign_btn: Button
 var menu_btn: Button
+var reward_buttons := []
 var build_buttons := []
 var close_menu_btn: Button
 var font: Font
@@ -214,6 +219,13 @@ func _build_ui() -> void:
 	next_btn = _make_button("Lanjut  (N)", Vector2(panel_x + 30, 615), Vector2(420, 58))
 	next_btn.pressed.connect(_next_stage)
 	next_btn.visible = false
+	var rewards := [["hp", "+2 HP Pasukan"], ["atk", "+1 ATK Pasukan"], ["gold", "+250 Gold"], ["unit", "Bonus Prajurit"]]
+	for i in rewards.size():
+		var reward_btn := _make_button(rewards[i][1], Vector2(340 + (i % 2) * 285, 470 + (i / 2) * 54), Vector2(270, 46))
+		reward_btn.add_theme_font_size_override("font_size", 16)
+		reward_btn.visible = false
+		reward_btn.pressed.connect(_choose_reward.bind(rewards[i][0]))
+		reward_buttons.append(reward_btn)
 
 	var bx := 203.0
 	var ys := [300.0, 356.0, 412.0, 468.0, 524.0]
@@ -258,6 +270,10 @@ func _start_campaign() -> void:
 	stage = 1
 	campaign_won = false
 	player_gold = 200
+	campaign_hp_bonus = 0
+	campaign_atk_bonus = 0
+	bonus_unit_pending = false
+	reward_pending = false
 	_setup_battle()
 	_save_progress()
 
@@ -266,12 +282,16 @@ func _save_progress() -> void:
 	var save := ConfigFile.new()
 	save.set_value("campaign", "stage", stage)
 	save.set_value("campaign", "gold", player_gold)
+	save.set_value("campaign", "hp_bonus", campaign_hp_bonus)
+	save.set_value("campaign", "atk_bonus", campaign_atk_bonus)
+	save.set_value("campaign", "bonus_unit_pending", bonus_unit_pending)
 	save.set_value("battle", "turn", turn)
 	save.set_value("battle", "game_over", game_over)
 	save.set_value("battle", "victory", victory)
 	save.set_value("battle", "campaign_won", campaign_won)
 	save.set_value("battle", "god_mode", god_mode)
 	save.set_value("battle", "rounds_survived", rounds_survived)
+	save.set_value("battle", "reward_pending", reward_pending)
 	var saved_units := []
 	for u in units:
 		saved_units.append({"pos": u.pos, "team": u.team, "hp": u.hp, "max_hp": u.max_hp, "atk": u.atk, "moved": u.moved, "kind": u.kind, "move_range": u.move_range, "atk_range": u.atk_range, "is_commander": u.is_commander})
@@ -289,6 +309,9 @@ func _load_progress() -> bool:
 		return false
 	stage = clampi(int(save.get_value("campaign", "stage", 1)), 1, MAX_STAGE)
 	player_gold = maxi(int(save.get_value("campaign", "gold", 200)), 0)
+	campaign_hp_bonus = maxi(int(save.get_value("campaign", "hp_bonus", 0)), 0)
+	campaign_atk_bonus = maxi(int(save.get_value("campaign", "atk_bonus", 0)), 0)
+	bonus_unit_pending = bool(save.get_value("campaign", "bonus_unit_pending", false))
 	turn = clampi(int(save.get_value("battle", "turn", 0)), 0, 1)
 	game_over = bool(save.get_value("battle", "game_over", false))
 	victory = bool(save.get_value("battle", "victory", false))
@@ -296,6 +319,7 @@ func _load_progress() -> bool:
 	god_mode = bool(save.get_value("battle", "god_mode", false))
 	objective = _stage_objective(stage)
 	rounds_survived = maxi(int(save.get_value("battle", "rounds_survived", 0)), 0)
+	reward_pending = bool(save.get_value("battle", "reward_pending", false))
 	survival_target = 4 + stage / 25
 	units.clear()
 	for data in save.get_value("battle", "units", []):
@@ -385,7 +409,7 @@ func _setup_battle() -> void:
 	var player_count := randi_range(3, 5)
 	for i in player_count:
 		var archer := i % 3 == 2
-		units.append(Unit.new(player_cells[i], 0, (10 if archer else 14) + player_tier * 4, (6 if archer else 4) + player_tier, "archer" if archer else "soldier", MOVE_RANGE, 2 if archer else 1))
+		units.append(Unit.new(player_cells[i], 0, (10 if archer else 14) + player_tier * 4 + campaign_hp_bonus, (6 if archer else 4) + player_tier + campaign_atk_bonus, "archer" if archer else "soldier", MOVE_RANGE, 2 if archer else 1))
 	units[0].is_commander = objective == "protect"
 	var enemy_count := mini(5 + (stage - 1) / 20 + randi_range(0, 1), 8)
 	var enemies := _stage_enemies(stage, enemy_count)
@@ -395,6 +419,9 @@ func _setup_battle() -> void:
 		units.append(Unit.new(pos, 1, e.hp, e.atk, e.kind, e.get("mr", MOVE_RANGE), e.get("ar", ATTACK_RANGE)))
 	for u in units:
 		u.visual_pos = _cell_center(u.pos)
+	if bonus_unit_pending:
+		_spawn_unit_near(buildings[1], 0, 14 + player_tier * 4 + campaign_hp_bonus, 4 + player_tier + campaign_atk_bonus)
+		bonus_unit_pending = false
 	selected = null
 	reachable = {}
 	attackable = {}
@@ -403,6 +430,7 @@ func _setup_battle() -> void:
 	turn = 0
 	game_over = false
 	victory = false
+	reward_pending = false
 	god_mode = false
 	stage_title = _stage_title(stage)
 	_close_build_menu()
@@ -428,14 +456,19 @@ func _refresh_ui() -> void:
 		end_turn_btn.visible = false
 		restart_btn.visible = false
 		next_btn.visible = false
+		for btn in reward_buttons:
+			btn.visible = false
 		return
 	start_btn.visible = false
 	new_campaign_btn.visible = false
 	menu_btn.visible = true
 	if game_over:
 		end_turn_btn.visible = false
-		next_btn.visible = victory and not campaign_won
+		next_btn.visible = victory and not campaign_won and not reward_pending
 		restart_btn.visible = not next_btn.visible
+		restart_btn.visible = not victory or campaign_won
+		for btn in reward_buttons:
+			btn.visible = reward_pending
 		restart_btn.text = "Main Lagi  (R)" if campaign_won else "Coba Lagi  (R)"
 		var result_button_pos := Vector2(440, 500)
 		next_btn.position = result_button_pos
@@ -446,6 +479,8 @@ func _refresh_ui() -> void:
 		end_turn_btn.disabled = turn != 0 or animating
 		next_btn.visible = false
 		restart_btn.visible = false
+		for btn in reward_buttons:
+			btn.visible = false
 
 
 func _process(delta: float) -> void:
@@ -688,6 +723,8 @@ func _draw_result_overlay() -> void:
 	_draw_centered(title, Rect2(card.position + Vector2(0, 88), Vector2(card.size.x, 54)), 34, TEXT_COL)
 	_draw_centered(detail, Rect2(card.position + Vector2(30, 150), Vector2(card.size.x - 60, 36)), 17, MUTED_COL)
 	_draw_centered("Sisa pasukan  %d    |    Gold  %d" % [_team_count(0), player_gold], Rect2(card.position + Vector2(40, 205), Vector2(card.size.x - 80, 36)), 18, TEXT_COL)
+	if reward_pending:
+		_draw_centered("Pilih satu hadiah kemenangan", Rect2(card.position + Vector2(40, 245), Vector2(card.size.x - 80, 30)), 16, ACCENT_WARM)
 	if victory:
 		for x in [70.0, 120.0, 440.0, 490.0]:
 			draw_circle(card.position + Vector2(x, 72 + fmod(x, 37)), 4, Color(color, 0.8))
@@ -1085,6 +1122,8 @@ func _step_toward(unit: Unit, target: Unit) -> Vector2i:
 
 
 func _check_game_over() -> void:
+	if game_over:
+		return
 	var players := 0
 	var enemies := 0
 	for u in units:
@@ -1107,6 +1146,7 @@ func _check_game_over() -> void:
 			message = "NAGA TEWAS! Kampanye selesai — kamu menang!"
 		else:
 			message = "Kemenangan! Pertempuran %d selesai. Tekan N untuk lanjut." % stage
+		reward_pending = not campaign_won
 	elif players == 0:
 		game_over = true
 		victory = false
@@ -1116,12 +1156,37 @@ func _check_game_over() -> void:
 
 
 func _next_stage() -> void:
-	if not game_over or not victory or campaign_won:
+	if not game_over or not victory or campaign_won or reward_pending:
 		return
 	stage += 1
 	player_gold += 100 + (stage - 1) * 25
 	_setup_battle()
 	_save_progress()
+
+
+func _choose_reward(kind: String) -> void:
+	if not reward_pending:
+		return
+	match kind:
+		"hp":
+			campaign_hp_bonus += 2
+			for u in units:
+				if u.team == 0:
+					u.max_hp += 2
+					u.hp += 2
+		"atk":
+			campaign_atk_bonus += 1
+			for u in units:
+				if u.team == 0:
+					u.atk += 1
+		"gold": player_gold += 250
+		"unit": bonus_unit_pending = true
+		_: return
+	reward_pending = false
+	message = "Hadiah dipilih. Tekan N untuk melanjutkan."
+	_save_progress()
+	_refresh_ui()
+	queue_redraw()
 
 
 func _restart() -> void:
