@@ -103,6 +103,7 @@ var end_turn_btn: Button
 var restart_btn: Button
 var next_btn: Button
 var start_btn: Button
+var new_campaign_btn: Button
 var menu_btn: Button
 var build_buttons := []
 var close_menu_btn: Button
@@ -192,6 +193,8 @@ func _build_ui() -> void:
 	var panel_x := 760.0
 	start_btn = _make_button("Mulai Kampanye  (Enter)", Vector2(430, 500), Vector2(420, 62))
 	start_btn.pressed.connect(_enter_game)
+	new_campaign_btn = _make_button("Kampanye Baru", Vector2(430, 580), Vector2(420, 52))
+	new_campaign_btn.pressed.connect(_start_new_campaign)
 	menu_btn = _make_button("Menu Utama  (Esc)", Vector2(1040, 24), Vector2(200, 46))
 	menu_btn.add_theme_font_size_override("font_size", 16)
 	menu_btn.pressed.connect(_show_main_menu)
@@ -345,16 +348,21 @@ func _refresh_ui() -> void:
 		return
 	if in_main_menu:
 		var menu_card := _menu_card_rect()
-		start_btn.size = Vector2(minf(560.0, menu_card.size.x - 40.0), 72)
-		start_btn.position = Vector2(menu_card.position.x + (menu_card.size.x - start_btn.size.x) * 0.5, menu_card.position.y + menu_card.size.y * 0.82)
+		var button_width := minf(560.0, menu_card.size.x - 40.0)
+		start_btn.size = Vector2(button_width, 58)
+		start_btn.position = Vector2(menu_card.position.x + (menu_card.size.x - button_width) * 0.5, menu_card.position.y + menu_card.size.y * 0.79)
 		start_btn.visible = true
 		start_btn.text = "Lanjutkan Level %d  (Enter)" % stage if has_started else "Mulai Kampanye  (Enter)"
+		new_campaign_btn.size = Vector2(button_width, 48)
+		new_campaign_btn.position = Vector2(start_btn.position.x, start_btn.position.y + 66)
+		new_campaign_btn.visible = has_started
 		menu_btn.visible = false
 		end_turn_btn.visible = false
 		restart_btn.visible = false
 		next_btn.visible = false
 		return
 	start_btn.visible = false
+	new_campaign_btn.visible = false
 	menu_btn.visible = true
 	if game_over:
 		end_turn_btn.visible = false
@@ -1035,6 +1043,11 @@ func _enter_game() -> void:
 	has_started = true
 	_refresh_ui()
 	queue_redraw()
+
+
+func _start_new_campaign() -> void:
+	_start_campaign()
+	_enter_game()
 
 
 func _show_main_menu() -> void:

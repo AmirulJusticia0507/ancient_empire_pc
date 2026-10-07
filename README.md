@@ -142,7 +142,7 @@ Lalu buka http://localhost:8060 di browser.
 
 Permainan berjalan sebagai kampanye **100 level** di papan 11×8 petak. Setiap pertempuran mengacak posisi dan jumlah awal: pemain membawa 3–5 unit, sementara musuh membawa 5–8 unit sesuai level. Setiap kemenangan membuka level berikutnya; statistik pemain dan musuh meningkat tiap 10 level, dan sisa gold tetap terbawa plus bonus.
 
-Progres level dan gold tersimpan otomatis di awal setiap level. Saat game dibuka kembali, tombol menu utama akan melanjutkan dari level terakhir yang tersimpan; pertempuran yang belum selesai dimulai kembali dari awal level tersebut.
+Progres level dan gold tersimpan otomatis di awal setiap level. Saat game dibuka kembali, tombol menu utama akan melanjutkan dari level terakhir yang tersimpan; pertempuran yang belum selesai dimulai kembali dari awal level tersebut. Pilih **Kampanye Baru** di menu utama untuk menghapus progres lama dan kembali ke level 1.
 
 Setiap level ke-10 menghadirkan boss **warlord** beserta pasukannya. Level 100 adalah pertarungan final melawan **Naga Abadi**, yang dapat menyerang dari jarak 2 petak. Menang di level 100 menuntaskan kampanye. Tekan **N** (atau tombol *Lanjut*) untuk maju; **R** untuk mengulang level saat kalah atau memulai kampanye baru setelah tamat.
 

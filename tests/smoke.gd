@@ -17,6 +17,9 @@ func _ready() -> void:
 	main.stage = 1
 	main.player_gold = 0
 	_assert(main._load_progress() and main.stage == 7 and main.player_gold == 345, "progres level dan gold tersimpan")
+	main._start_new_campaign()
+	_assert(main.stage == 1 and main.player_gold == 200, "kampanye baru menghapus progres lama")
+	_assert(not main.in_main_menu, "kampanye baru langsung membuka permainan")
 	main.stage = 1
 	main.player_gold = 200
 	main._setup_battle()
