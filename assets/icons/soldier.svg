@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="armor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef3fb"/>
+      <stop offset="1" stop-color="#9aa9c0"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5f8fc"/>
+      <stop offset="1" stop-color="#b9c4d4"/>
+    </linearGradient>
+    <linearGradient id="cape" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e05959"/>
+      <stop offset="1" stop-color="#8f1f1f"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="58" rx="18" ry="5" fill="#000" opacity="0.28"/>
+  <rect x="43" y="6" width="4.5" height="30" rx="2" fill="url(#steel)" stroke="#7d8ba0" stroke-width="1.2"/>
+  <rect x="38" y="33" width="15" height="4.5" rx="2" fill="#c9a24b" stroke="#8a6b2f" stroke-width="1.2"/>
+  <rect x="43" y="37" width="4.5" height="10" rx="2" fill="#7a5a28"/>
+  <path d="M19 54 L19 31 Q19 21 32 21 Q45 21 45 31 L45 54 Z" fill="url(#armor)" stroke="#5f6f86" stroke-width="2"/>
+  <path d="M32 22 L32 54" stroke="#c3cede" stroke-width="1.5" opacity="0.7"/>
+  <circle cx="32" cy="15" r="9" fill="#e8c9a0" stroke="#b98d5e" stroke-width="1.8"/>
+  <path d="M22 15 Q32 2 42 15 L42 18 Q32 12 22 18 Z" fill="#b9c6d8" stroke="#7d8ba0" stroke-width="1.6"/>
+  <path d="M30 9 Q32 3 34 9 Q36 6 37 12 L27 12 Q28 6 30 9 Z" fill="url(#cape)" stroke="#6d1414" stroke-width="1"/>
+  <path d="M11 29 Q11 47 20 52 Q20 32 20 27 Z" fill="url(#cape)" stroke="#6d1414" stroke-width="1.8"/>
+  <path d="M12.5 31 Q12.5 43 18.5 48" stroke="#f0b4b4" stroke-width="1.4" fill="none" opacity="0.6"/>
+</svg>

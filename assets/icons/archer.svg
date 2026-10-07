@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="cloak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fae6b"/>
+      <stop offset="1" stop-color="#256b3c"/>
+    </linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c99a5b"/>
+      <stop offset="1" stop-color="#7a5a2c"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="58" rx="17" ry="5" fill="#000" opacity="0.28"/>
+  <path d="M44 8 Q58 32 44 56" fill="none" stroke="url(#wood)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M44 8 L44 56" stroke="#e8e2d2" stroke-width="1.6"/>
+  <line x1="22" y1="32" x2="55" y2="32" stroke="#e8e2d2" stroke-width="2"/>
+  <path d="M55 32 l-7 -3 l0 6 Z" fill="#cfd8e3"/>
+  <path d="M21 54 L21 31 Q21 22 32 22 Q43 22 43 31 L43 54 Z" fill="url(#cloak)" stroke="#1c4f2c" stroke-width="2"/>
+  <circle cx="32" cy="15" r="8.5" fill="#e8c9a0" stroke="#b98d5e" stroke-width="1.8"/>
+  <path d="M23 16 Q23 5 32 5 Q41 5 41 16 Q36 11 32 11 Q28 11 23 16 Z" fill="#2f8552" stroke="#1c4f2c" stroke-width="1.6"/>
+  <path d="M14 30 Q10 44 20 52 L24 40 Q22 34 24 28 Z" fill="#3f9459" stroke="#1c4f2c" stroke-width="1.6"/>
+</svg>

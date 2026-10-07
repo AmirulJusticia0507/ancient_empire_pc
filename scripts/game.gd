@@ -52,13 +52,15 @@ class Unit:
 	var max_hp: int
 	var atk: int
 	var moved := false
+	var kind := "soldier"
 
-	func _init(p: Vector2i, t: int, h: int, a: int) -> void:
+	func _init(p: Vector2i, t: int, h: int, a: int, k := "soldier") -> void:
 		pos = p
 		team = t
 		hp = h
 		max_hp = h
 		atk = a
+		kind = k
 
 
 var units := []
@@ -82,6 +84,13 @@ var restart_btn: Button
 var build_buttons := []
 var close_menu_btn: Button
 var font: Font
+var unit_tex := {}
+
+
+func _load_textures() -> void:
+	unit_tex["soldier"] = load("res://assets/icons/soldier.svg")
+	unit_tex["archer"] = load("res://assets/icons/archer.svg")
+	unit_tex["brute"] = load("res://assets/icons/brute.svg")
 
 var sb_board: StyleBoxFlat
 var sb_tile_a: StyleBoxFlat
@@ -97,6 +106,7 @@ var sb_pill_over: StyleBoxFlat
 
 func _ready() -> void:
 	font = ThemeDB.fallback_font
+	_load_textures()
 	_build_styleboxes()
 	_build_ui()
 	_setup_units()
@@ -179,13 +189,13 @@ func _make_button(text: String, pos: Vector2, size: Vector2) -> Button:
 
 func _setup_units() -> void:
 	units.clear()
-	units.append(Unit.new(Vector2i(1, 1), 0, 14, 4))
-	units.append(Unit.new(Vector2i(1, 4), 0, 14, 4))
-	units.append(Unit.new(Vector2i(2, 2), 0, 12, 5))
-	units.append(Unit.new(Vector2i(6, 0), 1, 12, 3))
-	units.append(Unit.new(Vector2i(7, 2), 1, 12, 3))
-	units.append(Unit.new(Vector2i(6, 3), 1, 10, 4))
-	units.append(Unit.new(Vector2i(7, 5), 1, 12, 3))
+	units.append(Unit.new(Vector2i(1, 1), 0, 14, 4, "soldier"))
+	units.append(Unit.new(Vector2i(1, 4), 0, 14, 4, "soldier"))
+	units.append(Unit.new(Vector2i(2, 2), 0, 12, 5, "soldier"))
+	units.append(Unit.new(Vector2i(6, 0), 1, 12, 3, "brute"))
+	units.append(Unit.new(Vector2i(7, 2), 1, 12, 3, "brute"))
+	units.append(Unit.new(Vector2i(6, 3), 1, 10, 4, "brute"))
+	units.append(Unit.new(Vector2i(7, 5), 1, 12, 3, "brute"))
 	for u in units:
 		u.visual_pos = _cell_center(u.pos)
 	buildings.clear()
@@ -287,16 +297,19 @@ func _draw_buildings() -> void:
 func _draw_units() -> void:
 	for u in units:
 		var center: Vector2 = u.visual_pos
-		var radius := TILE * 0.31
 		var base := PLAYER_COL if u.team == 0 else ENEMY_COL
-		var lifted := center + Vector2(0, -3)
-		draw_circle(center + Vector2(0, 6), radius, Color(0, 0, 0, 0.35))
-		draw_circle(lifted, radius, base.darkened(0.25))
-		draw_circle(lifted, radius - 3.0, base.darkened(0.05))
-		draw_circle(lifted - Vector2(0, radius * 0.35), radius * 0.55, Color(1, 1, 1, 0.18))
+		var radius := TILE * 0.40
+		draw_circle(center + Vector2(0, 7), radius * 0.95, Color(0, 0, 0, 0.30))
+		draw_circle(center, radius, base.darkened(0.35))
+		draw_circle(center, radius - 2.5, base)
+		draw_circle(center - Vector2(0, radius * 0.35), radius * 0.5, Color(1, 1, 1, 0.10))
 		if u == selected:
 			var pulse := 0.5 + 0.5 * sin(time * 5.0)
-			draw_arc(lifted, radius + 5.0 + pulse * 3.0, 0.0, TAU, 48, Color(ACCENT_WARM, 0.55 + 0.45 * pulse), 3.0, true)
+			draw_arc(center, radius + 5.0 + pulse * 3.0, 0.0, TAU, 48, Color(ACCENT_WARM, 0.55 + 0.45 * pulse), 3.0, true)
+		var tex = unit_tex.get(u.kind)
+		if tex != null:
+			var size := Vector2(TILE * 0.94, TILE * 0.94)
+			draw_texture_rect(tex, Rect2(center - size * 0.5 + Vector2(0, -2), size), false)
 		_draw_hp(u, center)
 
 
@@ -718,7 +731,7 @@ func _building_at(cell: Vector2i) -> Building:
 	return null
 
 
-func _spawn_unit_near(building: Building, team: int, hp: int, atk: int) -> bool:
+func _spawn_unit_near(building: Building, team: int, hp: int, atk: int, kind := "soldier") -> bool:
 	var candidates := []
 	for dir in DIRS:
 		var c: Vector2i = building.pos + dir
@@ -739,7 +752,7 @@ func _spawn_unit_near(building: Building, team: int, hp: int, atk: int) -> bool:
 		if d < best:
 			best = d
 			spawn = c
-	var u := Unit.new(spawn, team, hp, atk)
+	var u := Unit.new(spawn, team, hp, atk, kind)
 	u.visual_pos = _cell_center(spawn)
 	units.append(u)
 	_spawn_floater(u.visual_pos + Vector2(0, -20), "BARU", GOLD_COL)
@@ -777,20 +790,20 @@ func _close_build_menu() -> void:
 func _on_build_action(action: String) -> void:
 	match action:
 		"recruit_warrior":
-			_try_recruit(14, 4, RECRUIT_COST, "Prajurit")
+			_try_recruit(14, 4, RECRUIT_COST, "Prajurit", "soldier")
 		"recruit_archer":
-			_try_recruit(10, 6, ARCHER_COST, "Pemanah")
+			_try_recruit(10, 6, ARCHER_COST, "Pemanah", "archer")
 		"potion":
 			_try_item("potion")
 		"whetstone":
 			_try_item("whetstone")
 
 
-func _try_recruit(hp: int, atk: int, cost: int, label: String) -> void:
+func _try_recruit(hp: int, atk: int, cost: int, label: String, kind: String) -> void:
 	if active_building == null or player_gold < cost:
 		message = "Gold tidak cukup."
 		return
-	if _spawn_unit_near(active_building, 0, hp, atk):
+	if _spawn_unit_near(active_building, 0, hp, atk, kind):
 		player_gold -= cost
 		message = "%s direkrut (-%dg). Sisa gold: %d." % [label, cost, player_gold]
 	else:

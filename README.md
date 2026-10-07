@@ -86,8 +86,10 @@ Atau buka Godot, pilih **Import**, arahkan ke `project.godot` di folder ini, lal
 
 - `project.godot` — konfigurasi proyek.
 - `scenes/main.tscn` — scene utama.
-- `scripts/game.gd` — logika dan render gameplay (grid, unit, giliran, pertarungan).
+- `scripts/game.gd` — logika dan render gameplay (grid, unit, giliran, pertarungan, bangunan).
+- `assets/icons/` — icon karakter orisinal (SVG): `soldier`, `archer`, `brute`.
 - `tests/smoke.tscn` — uji fungsional singkat.
+- `tests/shot.tscn` — membuat screenshot untuk verifikasi tampilan.
 
 ### Pengujian
 
