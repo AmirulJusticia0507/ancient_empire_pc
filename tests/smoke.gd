@@ -40,6 +40,20 @@ func _ready() -> void:
 		initial_positions[u.pos] = true
 	_assert(initial_positions.size() == main.units.size(), "posisi awal unit tidak bertumpuk")
 	_assert(main.turn == 0, "mulai di giliran pemain")
+	var ai_enemy = main.units.filter(func(u): return u.team == 1)[0]
+	var ai_players = main.units.filter(func(u): return u.team == 0)
+	ai_enemy.pos = Vector2i(5, 5)
+	ai_players[0].pos = Vector2i(5, 4)
+	ai_players[0].hp = 8
+	ai_players[1].pos = Vector2i(6, 5)
+	ai_players[1].hp = 2
+	_assert(main._ai_unit_target(ai_enemy) == ai_players[1], "AI menyerang target lemah dalam jangkauan")
+	ai_players[0].pos = Vector2i(main.GRID_W - 2, 0)
+	_assert(main._enemy_base_threat() == ai_players[0], "AI mendeteksi ancaman di dekat markas")
+	var player_building = main.buildings[0]
+	ai_enemy.pos = Vector2i(1, 0)
+	_assert(main._try_enemy_capture(ai_enemy, player_building) and player_building.owner == 1, "AI dapat mengudeta bangunan pemain")
+	main._setup_battle()
 
 	var first_player = main.units[0]
 	main._on_click(first_player.pos)

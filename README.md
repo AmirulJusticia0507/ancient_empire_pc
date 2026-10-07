@@ -27,6 +27,8 @@ Alur bermain umumnya seperti ini:
 
 Strateginya bukan hanya menyerang: lindungi unit yang rentan, pilih posisi yang menguntungkan, dan sesuaikan komposisi pasukan dengan situasi serta tujuan misi.
 
+AI musuh memprioritaskan unit lemah yang bisa diserang, merespons ancaman di sekitar markas, serta bergerak menuju bangunan pemain untuk mengudeta ketika jalurnya memungkinkan.
+
 ## Arah proyek ini
 
 README ini menjelaskan game yang menjadi inspirasi dan gambaran arah desain; mekanik di atas **belum diimplementasikan** di proyek ini. Tujuannya adalah membuat game strategi taktis berbasis giliran untuk PC dengan identitas dan aset orisinal, bukan menyalin materi milik game aslinya.

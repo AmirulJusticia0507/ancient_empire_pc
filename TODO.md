@@ -25,12 +25,12 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 - [x] Layar pilihan hadiah: HP, ATK, gold, atau unit baru.
 - [x] Terapkan pilihan hadiah ke level berikutnya.
 
-## 4. AI lebih pintar `[-]`
+## 4. AI lebih pintar `[x]`
 
 - [x] Musuh mencari, mendekati, dan menyerang unit pemain terdekat.
-- [ ] Prioritaskan target dengan HP rendah.
-- [ ] Jaga markas saat terancam.
-- [ ] Dekati dan kudeta bangunan pemain.
+- [x] Prioritaskan target dengan HP rendah.
+- [x] Jaga markas saat terancam.
+- [x] Dekati dan kudeta bangunan pemain.
 
 ## 5. Terrain berpengaruh `[ ]`
 
@@ -63,8 +63,7 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 
 ## Urutan pengerjaan berikutnya
 
-1. Tingkatkan AI.
-2. Aktifkan efek terrain.
-3. Tambahkan audio dan animasi lanjutan.
-4. Tambahkan pengaturan dan pause.
-5. Tambahkan mode endless.
+1. Aktifkan efek terrain.
+2. Tambahkan audio dan animasi lanjutan.
+3. Tambahkan pengaturan dan pause.
+4. Tambahkan mode endless.

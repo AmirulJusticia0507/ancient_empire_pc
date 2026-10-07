@@ -1052,9 +1052,18 @@ func _enemy_turn() -> void:
 			break
 		if e.team != 1 or not units.has(e):
 			continue
-		var target = _nearest_player(e.pos)
+		var target = _ai_unit_target(e)
 		if target == null:
 			break
+		var capture_target = _nearest_owned_building(e.pos, 0)
+		var guarding := _enemy_base_threat() != null
+		if capture_target != null and not guarding and _manhattan(e.pos, capture_target.pos) <= _manhattan(e.pos, target.pos):
+			if _manhattan(e.pos, capture_target.pos) > 1:
+				var building_step := _step_toward_cell(e, capture_target.pos, true)
+				if building_step != e.pos:
+					await _move_unit(e, building_step)
+			_try_enemy_capture(e, capture_target)
+			continue
 		if _manhattan(e.pos, target.pos) > e.atk_range:
 			var step := _step_toward(e, target)
 			if step != e.pos:
@@ -1096,28 +1105,91 @@ func _nearest_player(from: Vector2i) -> Unit:
 	return best
 
 
+func _ai_unit_target(enemy: Unit) -> Unit:
+	var players := units.filter(func(u): return u.team == 0)
+	if players.is_empty():
+		return null
+	var attackable_players := players.filter(func(u): return _manhattan(enemy.pos, u.pos) <= enemy.atk_range)
+	if not attackable_players.is_empty():
+		attackable_players.sort_custom(func(a, b): return a.hp < b.hp)
+		return attackable_players[0]
+	var threat = _enemy_base_threat()
+	if threat != null:
+		return threat
+	players.sort_custom(func(a, b):
+		var score_a: int = _manhattan(enemy.pos, a.pos) * 100 + a.hp
+		var score_b: int = _manhattan(enemy.pos, b.pos) * 100 + b.hp
+		return score_a < score_b)
+	return players[0]
+
+
+func _enemy_base_threat() -> Unit:
+	var threats := []
+	for u in units:
+		if u.team != 0:
+			continue
+		for b in buildings:
+			if b.owner == 1 and _manhattan(u.pos, b.pos) <= 3:
+				threats.append(u)
+				break
+	if threats.is_empty():
+		return null
+	threats.sort_custom(func(a, b): return a.hp < b.hp)
+	return threats[0]
+
+
+func _nearest_owned_building(from: Vector2i, owner: int) -> Building:
+	var best: Building = null
+	var best_dist := 1 << 30
+	for b in buildings:
+		if b.owner != owner:
+			continue
+		var dist := _manhattan(from, b.pos)
+		if dist < best_dist:
+			best = b
+			best_dist = dist
+	return best
+
+
+func _try_enemy_capture(enemy: Unit, building: Building) -> bool:
+	if building.owner != 0 or _manhattan(enemy.pos, building.pos) != 1:
+		return false
+	building.owner = 1
+	message = "Musuh mengudeta salah satu bangunanmu!"
+	_spawn_floater(_cell_center(building.pos), "DIREBUT", ENEMY_COL)
+	return true
+
+
 func _step_toward(unit: Unit, target: Unit) -> Vector2i:
+	return _step_toward_cell(unit, target.pos)
+
+
+func _step_toward_cell(unit: Unit, target: Vector2i, stop_adjacent := false) -> Vector2i:
+	if stop_adjacent and _manhattan(unit.pos, target) <= 1:
+		return unit.pos
 	var prev := {unit.pos: unit.pos}
 	var frontier := [unit.pos]
 	while not frontier.is_empty():
 		var cur: Vector2i = frontier.pop_front()
-		if cur == target.pos:
+		if cur == target:
 			break
 		for dir in DIRS:
 			var nxt: Vector2i = cur + dir
 			if not _in_bounds(nxt) or prev.has(nxt):
 				continue
-			if _unit_at(nxt) != null and nxt != target.pos:
+			if _unit_at(nxt) != null and nxt != target:
 				continue
-			if _building_at(nxt) != null:
+			if _building_at(nxt) != null and nxt != target:
 				continue
 			prev[nxt] = cur
 			frontier.append(nxt)
-	if not prev.has(target.pos):
+	if not prev.has(target):
 		return unit.pos
-	var node: Vector2i = target.pos
+	var node: Vector2i = target
 	while prev[node] != unit.pos and prev[node] != node:
 		node = prev[node]
+	if stop_adjacent and node == target:
+		return unit.pos
 	return node
 
 
