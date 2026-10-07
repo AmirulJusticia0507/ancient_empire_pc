@@ -144,7 +144,11 @@ python -m http.server 8060 --directory build/web
 
 Lalu buka http://localhost:8060 di browser.
 
-> Catatan: bila **Thread Support** diaktifkan, server wajib mengirim header `Cross-Origin-Opener-Policy: same-origin` dan `Cross-Origin-Embedder-Policy: require-corp`. Godot menyediakan skrip `serve.py` untuk ini: https://github.com/godotengine/godot/blob/master/platform/web/serve.py (`python serve.py --root build/web`). Untuk hosting produksi yang tidak bisa mengatur header, aktifkan opsi **Progressive Web App**.
+> Catatan: bila **Thread Support** diaktifkan, server wajib mengirim header `Cross-Origin-Opener-Policy: same-origin` dan `Cross-Origin-Embedder-Policy: require-corp`. Godot menyediakan skrip `serve.py` untuk ini: https://github.com/godotengine/godot/blob/master/platform/web/serve.py (`python serve.py --root build/web`).
+
+### Instalasi PWA di ponsel
+
+Build Web sudah memakai **Progressive Web App** dengan orientasi lanskap dan cache offline. Buka alamat game melalui HTTPS, lalu pilih **Install app / Tambahkan ke layar utama** dari menu browser. Setelah kunjungan pertama selesai dimuat, shell dan berkas game dapat dibuka kembali dari ikon aplikasi tanpa koneksi.
 
 ### Kampanye dan musuh
 
