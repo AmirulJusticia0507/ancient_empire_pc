@@ -109,8 +109,25 @@ func _ready() -> void:
 
 	main._next_stage()
 	_assert(main.stage == 2, "lanjut ke pertempuran 2")
+	_assert(main.objective == "capture", "level 2 memiliki tujuan kudeta")
 	_assert(main.units.size() >= 8 and main.units.size() <= 11, "jumlah unit level 2 diacak")
 	_assert(main._stage_enemies(2)[0].hp > main._stage_enemies(1)[0].hp, "musuh makin kuat setiap level")
+	main.buildings[2].owner = 0
+	main._check_game_over()
+	_assert(main.victory, "kudeta barak utama menyelesaikan misi")
+
+	main.stage = 3
+	main._setup_battle()
+	main.rounds_survived = main.survival_target
+	main._check_game_over()
+	_assert(main.victory, "bertahan sesuai target ronde menyelesaikan misi")
+
+	main.stage = 4
+	main._setup_battle()
+	var commander = main.units.filter(func(u): return u.is_commander)[0]
+	main.units.erase(commander)
+	main._check_game_over()
+	_assert(main.game_over and not main.victory, "misi gagal saat komandan gugur")
 
 	main.stage = 100
 	main._setup_battle()
@@ -121,6 +138,7 @@ func _ready() -> void:
 	_assert(has_dragon, "level 100 menampilkan naga final")
 	_assert(main._stage_enemies(10)[0].kind == "warlord", "boss muncul setiap 10 level")
 	_assert(main._stage_enemies(100).size() <= 8, "jumlah musuh sesuai kapasitas")
+	_assert(main.objective == "boss", "level boss memiliki tujuan khusus")
 	var final_enemy = main.units.filter(func(u): return u.team == 1)[0]
 	main._attack(main.units[0], final_enemy)
 	_assert(main.attack_fx.size() == 1, "serangan memunculkan efek petir")

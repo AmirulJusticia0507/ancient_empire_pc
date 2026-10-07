@@ -63,6 +63,7 @@ class Unit:
 	var kind := "soldier"
 	var move_range: int = MOVE_RANGE
 	var atk_range: int = ATTACK_RANGE
+	var is_commander := false
 
 	func _init(p: Vector2i, t: int, h: int, a: int, k := "soldier", mr := MOVE_RANGE, ar := ATTACK_RANGE) -> void:
 		pos = p
@@ -95,6 +96,9 @@ var stage := 1
 var victory := false
 var campaign_won := false
 var stage_title := ""
+var objective := "eliminate"
+var rounds_survived := 0
+var survival_target := 0
 var in_main_menu := true
 var has_started := false
 var save_path := "user://campaign.cfg"
@@ -267,9 +271,10 @@ func _save_progress() -> void:
 	save.set_value("battle", "victory", victory)
 	save.set_value("battle", "campaign_won", campaign_won)
 	save.set_value("battle", "god_mode", god_mode)
+	save.set_value("battle", "rounds_survived", rounds_survived)
 	var saved_units := []
 	for u in units:
-		saved_units.append({"pos": u.pos, "team": u.team, "hp": u.hp, "max_hp": u.max_hp, "atk": u.atk, "moved": u.moved, "kind": u.kind, "move_range": u.move_range, "atk_range": u.atk_range})
+		saved_units.append({"pos": u.pos, "team": u.team, "hp": u.hp, "max_hp": u.max_hp, "atk": u.atk, "moved": u.moved, "kind": u.kind, "move_range": u.move_range, "atk_range": u.atk_range, "is_commander": u.is_commander})
 	save.set_value("battle", "units", saved_units)
 	var saved_buildings := []
 	for b in buildings:
@@ -289,13 +294,21 @@ func _load_progress() -> bool:
 	victory = bool(save.get_value("battle", "victory", false))
 	campaign_won = bool(save.get_value("battle", "campaign_won", false))
 	god_mode = bool(save.get_value("battle", "god_mode", false))
+	objective = _stage_objective(stage)
+	rounds_survived = maxi(int(save.get_value("battle", "rounds_survived", 0)), 0)
+	survival_target = 4 + stage / 25
 	units.clear()
 	for data in save.get_value("battle", "units", []):
 		var u := Unit.new(data.get("pos", Vector2i.ZERO), int(data.get("team", 0)), maxi(int(data.get("max_hp", 1)), 1), maxi(int(data.get("atk", 1)), 1), str(data.get("kind", "soldier")), maxi(int(data.get("move_range", MOVE_RANGE)), 1), maxi(int(data.get("atk_range", ATTACK_RANGE)), 1))
 		u.hp = clampi(int(data.get("hp", u.max_hp)), 1, u.max_hp)
 		u.moved = bool(data.get("moved", false))
+		u.is_commander = bool(data.get("is_commander", false))
 		u.visual_pos = _cell_center(u.pos)
 		units.append(u)
+	if objective == "protect" and not units.any(func(u): return u.team == 0 and u.is_commander):
+		var players := units.filter(func(u): return u.team == 0)
+		if not players.is_empty():
+			players[0].is_commander = true
 	buildings.clear()
 	for data in save.get_value("battle", "buildings", []):
 		buildings.append(Building.new(data.get("pos", Vector2i.ZERO), str(data.get("type", BARRACKS)), clampi(int(data.get("owner", 0)), 0, 1)))
@@ -330,6 +343,25 @@ func _stage_title(s: int) -> String:
 	return REGIONS[((s - 1) / 10) % REGIONS.size()]
 
 
+func _stage_objective(s: int) -> String:
+	if s % 10 == 0:
+		return "boss"
+	match s % 4:
+		2: return "capture"
+		3: return "survive"
+		0: return "protect"
+		_: return "eliminate"
+
+
+func _objective_text() -> String:
+	match objective:
+		"capture": return "Kudeta barak utama musuh"
+		"survive": return "Bertahan %d ronde (%d/%d)" % [survival_target, rounds_survived, survival_target]
+		"protect": return "Lindungi komandan dan kalahkan musuh"
+		"boss": return "Kalahkan boss musuh"
+		_: return "Kalahkan seluruh pasukan musuh"
+
+
 func _setup_battle() -> void:
 	units.clear()
 	buildings.clear()
@@ -347,10 +379,14 @@ func _setup_battle() -> void:
 	player_cells.shuffle()
 	enemy_cells.shuffle()
 	var player_tier := (stage - 1) / 10
+	objective = _stage_objective(stage)
+	rounds_survived = 0
+	survival_target = 4 + stage / 25
 	var player_count := randi_range(3, 5)
 	for i in player_count:
 		var archer := i % 3 == 2
 		units.append(Unit.new(player_cells[i], 0, (10 if archer else 14) + player_tier * 4, (6 if archer else 4) + player_tier, "archer" if archer else "soldier", MOVE_RANGE, 2 if archer else 1))
+	units[0].is_commander = objective == "protect"
 	var enemy_count := mini(5 + (stage - 1) / 20 + randi_range(0, 1), 8)
 	var enemies := _stage_enemies(stage, enemy_count)
 	for i in enemies.size():
@@ -571,6 +607,8 @@ func _draw_units() -> void:
 		if tex != null:
 			var size := Vector2(TILE * 0.94, TILE * 0.94)
 			draw_texture_rect(tex, Rect2(center - size * 0.5 + Vector2(0, -2), size), false)
+		if u.is_commander:
+			_draw_text("★", center + Vector2(13, -13), 18, ACCENT_WARM)
 		_draw_hp(u, center)
 
 
@@ -628,7 +666,7 @@ func _draw_hud() -> void:
 	_draw_team_stat(1, Vector2(790, 340))
 
 	_draw_text("TUJUAN MISI", Vector2(790, 445), 14, MUTED_COL)
-	_draw_text("Kalahkan seluruh pasukan musuh", Vector2(790, 474), 19, TEXT_COL)
+	_draw_text(_objective_text(), Vector2(790, 474), 19, TEXT_COL)
 	_draw_text("Taklukkan 100 level; boss muncul setiap 10 level.", Vector2(790, 500), 13, MUTED_COL)
 	if god_mode:
 		_draw_text("GOD MODE AKTIF", Vector2(1080, 522), 14, ACCENT)
@@ -862,6 +900,7 @@ func _capture_building(building: Building) -> void:
 	player_gold += CAPTURE_REWARD
 	_spawn_floater(_cell_center(building.pos) + Vector2(0, -28), "KUDETA +%dg" % CAPTURE_REWARD, ACCENT_WARM)
 	message = "Kudeta berhasil! Markas musuh kini milikmu dan bisa langsung digunakan."
+	_check_game_over()
 	_save_progress()
 	queue_redraw()
 
@@ -995,6 +1034,11 @@ func _enemy_turn() -> void:
 	for u in units:
 		if u.team == 0:
 			u.moved = false
+	rounds_survived += 1
+	_check_game_over()
+	if game_over:
+		_save_progress()
+		return
 	turn = 0
 	message = "Giliran pemain. Pilih unit, lalu klik petak tujuan."
 	_save_progress()
@@ -1048,7 +1092,14 @@ func _check_game_over() -> void:
 			players += 1
 		else:
 			enemies += 1
-	if enemies == 0:
+	var commander_alive := units.any(func(u): return u.team == 0 and u.is_commander)
+	var boss_alive := units.any(func(u): return u.team == 1 and u.kind in ["warlord", "dragon"])
+	var enemy_hq_captured := buildings.any(func(b): return b.type == BARRACKS and b.pos.x == GRID_W - 1 and b.owner == 0)
+	if objective == "protect" and not commander_alive:
+		game_over = true
+		victory = false
+		message = "Kalah! Komandan yang harus dilindungi telah gugur."
+	elif enemies == 0 or (objective == "boss" and not boss_alive) or (objective == "capture" and enemy_hq_captured) or (objective == "survive" and rounds_survived >= survival_target):
 		game_over = true
 		victory = true
 		if stage >= MAX_STAGE:

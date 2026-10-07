@@ -9,14 +9,14 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 - [x] Tombol lanjutkan progres dan kampanye baru.
 - [x] Simpan kondisi pertempuran: seluruh pasukan, jenis unit, HP, ATK, posisi, bangunan, dan giliran.
 
-## 2. Variasi tujuan `[-]`
+## 2. Variasi tujuan `[x]`
 
 - [x] Menang dengan mengalahkan semua musuh.
 - [x] Pertempuran boss setiap 10 level dan Naga Abadi pada level 100.
 - [x] Mekanik kudeta bangunan musuh.
-- [ ] Jadikan kudeta markas sebagai tujuan kemenangan khusus.
-- [ ] Tujuan bertahan selama beberapa giliran.
-- [ ] Tujuan melindungi unit penting.
+- [x] Jadikan kudeta markas sebagai tujuan kemenangan khusus.
+- [x] Tujuan bertahan selama beberapa giliran.
+- [x] Tujuan melindungi unit penting.
 
 ## 3. Hadiah setelah menang `[-]`
 
@@ -63,10 +63,9 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 
 ## Urutan pengerjaan berikutnya
 
-1. Tambahkan variasi tujuan.
-2. Tambahkan pilihan hadiah kemenangan.
-3. Tingkatkan AI.
-4. Aktifkan efek terrain.
-5. Tambahkan audio dan animasi lanjutan.
-6. Tambahkan pengaturan dan pause.
-7. Tambahkan mode endless.
+1. Tambahkan pilihan hadiah kemenangan.
+2. Tingkatkan AI.
+3. Aktifkan efek terrain.
+4. Tambahkan audio dan animasi lanjutan.
+5. Tambahkan pengaturan dan pause.
+6. Tambahkan mode endless.
