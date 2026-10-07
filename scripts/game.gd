@@ -104,6 +104,8 @@ var reward_pending := false
 var campaign_hp_bonus := 0
 var campaign_atk_bonus := 0
 var bonus_unit_pending := false
+var endless_mode := false
+var endless_high_score := 100
 var in_main_menu := true
 var has_started := false
 var save_path := "user://campaign.cfg"
@@ -316,6 +318,8 @@ func _make_button(text: String, pos: Vector2, size: Vector2) -> Button:
 func _start_campaign() -> void:
 	stage = 1
 	campaign_won = false
+	endless_mode = false
+	endless_high_score = 100
 	player_gold = 200
 	campaign_hp_bonus = 0
 	campaign_atk_bonus = 0
@@ -332,6 +336,8 @@ func _save_progress() -> void:
 	save.set_value("campaign", "hp_bonus", campaign_hp_bonus)
 	save.set_value("campaign", "atk_bonus", campaign_atk_bonus)
 	save.set_value("campaign", "bonus_unit_pending", bonus_unit_pending)
+	save.set_value("campaign", "endless_mode", endless_mode)
+	save.set_value("campaign", "endless_high_score", endless_high_score)
 	save.set_value("battle", "turn", turn)
 	save.set_value("battle", "game_over", game_over)
 	save.set_value("battle", "victory", victory)
@@ -354,7 +360,9 @@ func _load_progress() -> bool:
 	var save := ConfigFile.new()
 	if save.load(save_path) != OK:
 		return false
-	stage = clampi(int(save.get_value("campaign", "stage", 1)), 1, MAX_STAGE)
+	endless_mode = bool(save.get_value("campaign", "endless_mode", false))
+	endless_high_score = maxi(int(save.get_value("campaign", "endless_high_score", 100)), 100)
+	stage = maxi(int(save.get_value("campaign", "stage", 1)), 1) if endless_mode else clampi(int(save.get_value("campaign", "stage", 1)), 1, MAX_STAGE)
 	player_gold = maxi(int(save.get_value("campaign", "gold", 200)), 0)
 	campaign_hp_bonus = maxi(int(save.get_value("campaign", "hp_bonus", 0)), 0)
 	campaign_atk_bonus = maxi(int(save.get_value("campaign", "atk_bonus", 0)), 0)
@@ -517,7 +525,7 @@ func _refresh_ui() -> void:
 		restart_btn.visible = not victory or campaign_won
 		for btn in reward_buttons:
 			btn.visible = reward_pending
-		restart_btn.text = "Main Lagi  (R)" if campaign_won else "Coba Lagi  (R)"
+		restart_btn.text = "Mulai Endless  (R)" if campaign_won else "Coba Lagi  (R)"
 		var result_button_pos := Vector2(440, 500)
 		next_btn.position = result_button_pos
 		restart_btn.position = result_button_pos
@@ -725,7 +733,8 @@ func _draw_hud() -> void:
 	var panel := Rect2(Vector2(760, 90), Vector2(480, 600))
 	draw_style_box(sb_hud, panel)
 	_draw_text("ANCIENT EMPIRE", Vector2(70, 90), 40, TEXT_COL)
-	_draw_text("Pertempuran %d/%d  •  %s" % [stage, MAX_STAGE, stage_title], Vector2(72, 122), 16, ACCENT)
+	var stage_label := "Pertempuran %d/∞" % stage if endless_mode else "Pertempuran %d/%d" % [stage, MAX_STAGE]
+	_draw_text("%s  •  %s" % [stage_label, stage_title], Vector2(72, 122), 16, ACCENT)
 	_draw_text(message, Vector2(70, 668), 18, TEXT_COL)
 	var hint := "Klik unit › petak untuk bergerak › musuh bersebelahan untuk serang."
 	_draw_text(hint, Vector2(70, 692), 14, MUTED_COL)
@@ -1298,7 +1307,7 @@ func _check_game_over() -> void:
 	elif enemies == 0 or (objective == "boss" and not boss_alive) or (objective == "capture" and enemy_hq_captured) or (objective == "survive" and rounds_survived >= survival_target):
 		game_over = true
 		victory = true
-		if stage >= MAX_STAGE:
+		if stage == MAX_STAGE and not endless_mode:
 			campaign_won = true
 			message = "NAGA TEWAS! Kampanye selesai — kamu menang!"
 		else:
@@ -1317,6 +1326,8 @@ func _next_stage() -> void:
 	if not game_over or not victory or campaign_won or reward_pending:
 		return
 	stage += 1
+	if endless_mode:
+		endless_high_score = maxi(endless_high_score, stage)
 	player_gold += 100 + (stage - 1) * 25
 	_setup_battle()
 	_save_progress()
@@ -1349,10 +1360,18 @@ func _choose_reward(kind: String) -> void:
 
 func _restart() -> void:
 	if campaign_won:
-		_start_campaign()
+		_start_endless()
 	else:
 		_setup_battle()
 	_save_progress()
+
+
+func _start_endless() -> void:
+	endless_mode = true
+	campaign_won = false
+	stage = MAX_STAGE + 1
+	endless_high_score = maxi(endless_high_score, stage)
+	_setup_battle()
 
 
 func _enter_game() -> void:

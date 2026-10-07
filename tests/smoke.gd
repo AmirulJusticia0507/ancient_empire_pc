@@ -173,6 +173,8 @@ func _ready() -> void:
 	_assert(main.attack_fx.size() == 1, "serangan memunculkan efek petir")
 	main._cheat_kill_all()
 	_assert(main.campaign_won, "menang level 100 menamatkan kampanye")
+	main._restart()
+	_assert(main.endless_mode and main.stage == 101 and not main.game_over, "mode endless dimulai setelah level 100")
 
 	print("SMOKE OK")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(main.save_path))

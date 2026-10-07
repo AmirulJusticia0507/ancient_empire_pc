@@ -55,13 +55,12 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 - [ ] Pilihan kualitas grafis.
 - [ ] Menu pause.
 
-## 8. Mode endless `[ ]`
+## 8. Mode endless `[x]`
 
-- [ ] Buka mode endless setelah level 100 selesai.
-- [ ] Buat level, pasukan, terrain, dan hadiah secara acak tanpa batas.
-- [ ] Simpan rekor level atau skor tertinggi.
+- [x] Buka mode endless setelah level 100 selesai.
+- [x] Buat level, pasukan, terrain, dan hadiah secara acak tanpa batas.
+- [x] Simpan rekor level tertinggi.
 
 ## Urutan pengerjaan berikutnya
 
 1. Tambahkan pengaturan dan pause.
-2. Tambahkan mode endless.

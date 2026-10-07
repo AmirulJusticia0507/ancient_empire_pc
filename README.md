@@ -152,6 +152,8 @@ Progres level, gold, pasukan, posisi, HP, ATK, kepemilikan bangunan, dan giliran
 
 Setiap level ke-10 menghadirkan boss **warlord** beserta pasukannya. Level 100 adalah pertarungan final melawan **Naga Abadi**, yang dapat menyerang dari jarak 2 petak. Menang di level 100 menuntaskan kampanye. Tekan **N** (atau tombol *Lanjut*) untuk maju; **R** untuk mengulang level saat kalah atau memulai kampanye baru setelah tamat.
 
+Setelah Naga Abadi dikalahkan, tekan **R** pada layar kemenangan untuk membuka **mode endless** mulai level 101. Level akan terus meningkat tanpa batas dan rekor level tertinggi tersimpan otomatis.
+
 Tujuan misi berganti antarlevel: mengalahkan seluruh musuh, mengudeta barak utama, bertahan selama beberapa ronde, atau melindungi komandan bertanda bintang. Level boss dimenangkan segera setelah boss dikalahkan.
 
 Setelah menang, pilih satu hadiah sebelum melanjutkan: bonus permanen **+2 HP**, **+1 ATK**, **250 gold**, atau satu prajurit tambahan pada level berikutnya.
