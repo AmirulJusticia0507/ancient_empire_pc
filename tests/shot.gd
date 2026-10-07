@@ -4,8 +4,8 @@ func _ready() -> void:
 	var main = load("res://scenes/main.tscn").instantiate()
 	add_child(main)
 	await get_tree().process_frame
-	main._spawn_unit_near(main.buildings[1], 0, 10, 6, "archer")
-	main._on_click(Vector2i(1, 1))
+	main.stage = 4
+	main._setup_battle()
 	for i in 5:
 		await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()

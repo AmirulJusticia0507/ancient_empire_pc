@@ -50,6 +50,19 @@ func _ready() -> void:
 	_assert(main.god_mode, "cheat god mode aktif")
 	main._cheat_kill_all()
 	_assert(main.game_over, "cheat hapus semua musuh memicu kemenangan")
+	_assert(main.victory, "kemenangan tercatat")
+
+	main._next_stage()
+	_assert(main.stage == 2, "lanjut ke pertempuran 2")
+	_assert(main.units.size() == 8, "komposisi musuh berbeda di pertempuran 2")
+
+	main.stage = 4
+	main._setup_battle()
+	var has_dragon = false
+	for u in main.units:
+		if u.kind == "dragon":
+			has_dragon = true
+	_assert(has_dragon, "pertempuran final menampilkan naga")
 
 	print("SMOKE OK")
 	get_tree().quit(0)

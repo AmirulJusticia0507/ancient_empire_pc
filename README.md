@@ -87,7 +87,7 @@ Atau buka Godot, pilih **Import**, arahkan ke `project.godot` di folder ini, lal
 - `project.godot` — konfigurasi proyek.
 - `scenes/main.tscn` — scene utama.
 - `scripts/game.gd` — logika dan render gameplay (grid, unit, giliran, pertarungan, bangunan).
-- `assets/icons/` — icon karakter orisinal (SVG): `soldier`, `archer`, `brute`.
+- `assets/icons/` — icon karakter orisinal (SVG): `soldier`, `archer`, `brute`, `warlord`, `dragon`.
 - `tests/smoke.tscn` — uji fungsional singkat.
 - `tests/shot.tscn` — membuat screenshot untuk verifikasi tampilan.
 
@@ -137,6 +137,17 @@ python -m http.server 8060 --directory build/web
 Lalu buka http://localhost:8060 di browser.
 
 > Catatan: bila **Thread Support** diaktifkan, server wajib mengirim header `Cross-Origin-Opener-Policy: same-origin` dan `Cross-Origin-Embedder-Policy: require-corp`. Godot menyediakan skrip `serve.py` untuk ini: https://github.com/godotengine/godot/blob/master/platform/web/serve.py (`python serve.py --root build/web`). Untuk hosting produksi yang tidak bisa mengatur header, aktifkan opsi **Progressive Web App**.
+
+### Kampanye dan musuh
+
+Permainan berjalan sebagai kampanye berurutan. Setiap kali menang, kamu maju ke pertempuran berikutnya dengan komposisi musuh yang berbeda dan makin kuat (sisa gold terbawa plus bonus):
+
+1. **Perampok Bukit** — gerombolan *brute*.
+2. **Pasukan Bayaran** — brute lebih banyak dan lebih kuat.
+3. **Panglima Perang** — *warlord* (HP/serangan tinggi, jangkauan gerak 2) dengan pengawal.
+4. **Sarang Naga** — boss **naga**: HP besar, jangkauan gerak 2, dan **menyerang dari jarak 2 petak**.
+
+Menang di pertempuran terakhir menuntaskan kampanye. Tekan **N** (atau tombol *Lanjut*) untuk maju; **R** untuk mengulang pertempuran saat kalah atau memulai kampanye baru setelah menang.
 
 ### Bangunan dan ekonomi
 

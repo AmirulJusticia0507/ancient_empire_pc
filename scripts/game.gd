@@ -31,6 +31,9 @@ const ARCHER_COST := 90
 const POTION_COST := 40
 const WHETSTONE_COST := 50
 const KILL_REWARD := 50
+const MAX_STAGE := 4
+const STAGE_TITLES := ["Perampok Bukit", "Pasukan Bayaran", "Panglima Perang", "Sarang Naga"]
+const ENEMY_SPOTS := [Vector2i(7, 0), Vector2i(7, 2), Vector2i(6, 3), Vector2i(7, 5), Vector2i(6, 1), Vector2i(5, 4)]
 
 
 class Building:
@@ -53,14 +56,18 @@ class Unit:
 	var atk: int
 	var moved := false
 	var kind := "soldier"
+	var move_range: int = MOVE_RANGE
+	var atk_range: int = ATTACK_RANGE
 
-	func _init(p: Vector2i, t: int, h: int, a: int, k := "soldier") -> void:
+	func _init(p: Vector2i, t: int, h: int, a: int, k := "soldier", mr := MOVE_RANGE, ar := ATTACK_RANGE) -> void:
 		pos = p
 		team = t
 		hp = h
 		max_hp = h
 		atk = a
 		kind = k
+		move_range = mr
+		atk_range = ar
 
 
 var units := []
@@ -78,9 +85,14 @@ var god_mode := false
 var buildings := []
 var player_gold := 0
 var active_building: Building = null
+var stage := 1
+var victory := false
+var campaign_won := false
+var stage_title := ""
 
 var end_turn_btn: Button
 var restart_btn: Button
+var next_btn: Button
 var build_buttons := []
 var close_menu_btn: Button
 var font: Font
@@ -91,6 +103,8 @@ func _load_textures() -> void:
 	unit_tex["soldier"] = load("res://assets/icons/soldier.svg")
 	unit_tex["archer"] = load("res://assets/icons/archer.svg")
 	unit_tex["brute"] = load("res://assets/icons/brute.svg")
+	unit_tex["warlord"] = load("res://assets/icons/warlord.svg")
+	unit_tex["dragon"] = load("res://assets/icons/dragon.svg")
 
 var sb_board: StyleBoxFlat
 var sb_tile_a: StyleBoxFlat
@@ -109,7 +123,7 @@ func _ready() -> void:
 	_load_textures()
 	_build_styleboxes()
 	_build_ui()
-	_setup_units()
+	_start_campaign()
 	set_process(true)
 	queue_redraw()
 
@@ -146,8 +160,12 @@ func _build_ui() -> void:
 	var panel_x := 760.0
 	end_turn_btn = _make_button("Akhiri Giliran  (E)", Vector2(panel_x + 30, 545), Vector2(420, 58))
 	end_turn_btn.pressed.connect(_on_end_turn_pressed)
-	restart_btn = _make_button("Mulai Ulang  (R)", Vector2(panel_x + 30, 615), Vector2(420, 58))
+	restart_btn = _make_button("Coba Lagi  (R)", Vector2(panel_x + 30, 545), Vector2(420, 58))
 	restart_btn.pressed.connect(_restart)
+	restart_btn.visible = false
+	next_btn = _make_button("Lanjut  (N)", Vector2(panel_x + 30, 615), Vector2(420, 58))
+	next_btn.pressed.connect(_next_stage)
+	next_btn.visible = false
 
 	var bx := 203.0
 	var ys := [300.0, 356.0, 412.0, 468.0]
@@ -187,15 +205,42 @@ func _make_button(text: String, pos: Vector2, size: Vector2) -> Button:
 	return b
 
 
-func _setup_units() -> void:
+func _start_campaign() -> void:
+	stage = 1
+	campaign_won = false
+	player_gold = 200
+	_setup_battle()
+
+
+func _stage_enemies(s: int) -> Array:
+	var list := []
+	if s <= 1:
+		for i in 4:
+			list.append({"kind": "brute", "hp": 12, "atk": 3})
+	elif s == 2:
+		for i in 5:
+			list.append({"kind": "brute", "hp": 14, "atk": 3})
+	elif s == 3:
+		list.append({"kind": "warlord", "hp": 30, "atk": 6, "mr": 2, "ar": 1})
+		for i in 3:
+			list.append({"kind": "brute", "hp": 16, "atk": 4})
+	else:
+		list.append({"kind": "dragon", "hp": 55, "atk": 9, "mr": 2, "ar": 2})
+		for i in 2:
+			list.append({"kind": "brute", "hp": 18, "atk": 4})
+	return list
+
+
+func _setup_battle() -> void:
 	units.clear()
 	units.append(Unit.new(Vector2i(1, 1), 0, 14, 4, "soldier"))
 	units.append(Unit.new(Vector2i(1, 4), 0, 14, 4, "soldier"))
 	units.append(Unit.new(Vector2i(2, 2), 0, 12, 5, "soldier"))
-	units.append(Unit.new(Vector2i(6, 0), 1, 12, 3, "brute"))
-	units.append(Unit.new(Vector2i(7, 2), 1, 12, 3, "brute"))
-	units.append(Unit.new(Vector2i(6, 3), 1, 10, 4, "brute"))
-	units.append(Unit.new(Vector2i(7, 5), 1, 12, 3, "brute"))
+	var enemies := _stage_enemies(stage)
+	for i in enemies.size():
+		var e: Dictionary = enemies[i]
+		var pos: Vector2i = ENEMY_SPOTS[i % ENEMY_SPOTS.size()]
+		units.append(Unit.new(pos, 1, e.hp, e.atk, e.kind, e.get("mr", MOVE_RANGE), e.get("ar", ATTACK_RANGE)))
 	for u in units:
 		u.visual_pos = _cell_center(u.pos)
 	buildings.clear()
@@ -203,25 +248,34 @@ func _setup_units() -> void:
 	buildings.append(Building.new(Vector2i(0, 5), BARRACKS, 0))
 	buildings.append(Building.new(Vector2i(8, 0), BARRACKS, 1))
 	buildings.append(Building.new(Vector2i(8, 5), MARKET, 1))
-	player_gold = 200
 	selected = null
 	reachable = {}
 	attackable = {}
 	floaters.clear()
 	turn = 0
 	game_over = false
+	victory = false
 	god_mode = false
+	stage_title = STAGE_TITLES[stage - 1]
 	_close_build_menu()
-	message = "Giliran pemain. Pilih unit, atau klik bangunanmu untuk membangun."
+	message = "Pertempuran %d: %s. Giliran pemain." % [stage, stage_title]
 	_refresh_ui()
 	queue_redraw()
 
 
 func _refresh_ui() -> void:
-	if end_turn_btn:
-		end_turn_btn.disabled = turn != 0 or game_over
-	if restart_btn:
-		restart_btn.disabled = not game_over
+	if end_turn_btn == null:
+		return
+	if game_over:
+		end_turn_btn.visible = false
+		next_btn.visible = victory and not campaign_won
+		restart_btn.visible = not next_btn.visible
+		restart_btn.text = "Main Lagi  (R)" if campaign_won else "Coba Lagi  (R)"
+	else:
+		end_turn_btn.visible = true
+		end_turn_btn.disabled = turn != 0 or animating
+		next_btn.visible = false
+		restart_btn.visible = false
 
 
 func _process(delta: float) -> void:
@@ -337,7 +391,7 @@ func _draw_hud() -> void:
 	var panel := Rect2(Vector2(760, 90), Vector2(480, 600))
 	draw_style_box(sb_hud, panel)
 	_draw_text("ANCIENT EMPIRE", Vector2(70, 90), 40, TEXT_COL)
-	_draw_text("PC  •  turn-based tactics prototype", Vector2(72, 122), 16, MUTED_COL)
+	_draw_text("Pertempuran %d/%d  •  %s" % [stage, MAX_STAGE, stage_title], Vector2(72, 122), 16, ACCENT)
 	_draw_text(message, Vector2(70, 668), 18, TEXT_COL)
 	var hint := "Klik unit › petak untuk bergerak › musuh bersebelahan untuk serang."
 	_draw_text(hint, Vector2(70, 692), 14, MUTED_COL)
@@ -420,6 +474,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_R:
 			_restart()
+		elif event.keycode == KEY_N:
+			_next_stage()
 		elif event.keycode == KEY_E and not game_over:
 			_on_end_turn_pressed()
 		elif event.keycode == KEY_K:
@@ -477,7 +533,7 @@ func _on_click(cell: Vector2i) -> void:
 		message = "Unit bergerak. Pilih unit lain atau akhiri giliran."
 		queue_redraw()
 		return
-	if selected and u != null and u.team == 1 and _manhattan(selected.pos, u.pos) <= ATTACK_RANGE:
+	if selected and u != null and u.team == 1 and _manhattan(selected.pos, u.pos) <= selected.atk_range:
 		_attack(selected, u)
 		selected.moved = true
 		selected = null
@@ -587,7 +643,7 @@ func _compute_reachable(unit: Unit) -> Dictionary:
 	while not frontier.is_empty():
 		var cur: Vector2i = frontier.pop_front()
 		var dist: int = result[cur]
-		if dist >= MOVE_RANGE:
+		if dist >= unit.move_range:
 			continue
 		for dir in DIRS:
 			var nxt: Vector2i = cur + dir
@@ -602,13 +658,9 @@ func _compute_reachable(unit: Unit) -> Dictionary:
 
 func _compute_attackable(unit: Unit) -> Dictionary:
 	var result := {}
-	for dir in DIRS:
-		var nxt: Vector2i = unit.pos + dir
-		if not _in_bounds(nxt):
-			continue
-		var other = _unit_at(nxt)
-		if other != null and other.team != unit.team:
-			result[nxt] = true
+	for u in units:
+		if u.team != unit.team and _manhattan(unit.pos, u.pos) <= unit.atk_range:
+			result[u.pos] = true
 	return result
 
 
@@ -635,13 +687,13 @@ func _enemy_turn() -> void:
 		var target = _nearest_player(e.pos)
 		if target == null:
 			break
-		if _manhattan(e.pos, target.pos) > ATTACK_RANGE:
+		if _manhattan(e.pos, target.pos) > e.atk_range:
 			var step := _step_toward(e, target)
 			if step != e.pos:
 				await _move_unit(e, step)
 		if not units.has(target):
 			continue
-		if _manhattan(e.pos, target.pos) <= ATTACK_RANGE:
+		if _manhattan(e.pos, target.pos) <= e.atk_range:
 			_attack(e, target)
 			queue_redraw()
 			await get_tree().create_timer(0.25).timeout
@@ -705,16 +757,33 @@ func _check_game_over() -> void:
 			enemies += 1
 	if enemies == 0:
 		game_over = true
-		message = "Kemenangan! Semua musuh dikalahkan."
+		victory = true
+		if stage >= MAX_STAGE:
+			campaign_won = true
+			message = "NAGA TEWAS! Kampanye selesai — kamu menang!"
+		else:
+			message = "Kemenangan! Pertempuran %d selesai. Tekan N untuk lanjut." % stage
 	elif players == 0:
 		game_over = true
-		message = "Kalah! Semua unitmu dihabisi."
+		victory = false
+		message = "Kalah! Coba lagi pertempuran ini."
 	if game_over:
 		_refresh_ui()
 
 
+func _next_stage() -> void:
+	if not game_over or not victory or campaign_won:
+		return
+	stage += 1
+	player_gold += 100 + (stage - 1) * 25
+	_setup_battle()
+
+
 func _restart() -> void:
-	_setup_units()
+	if campaign_won:
+		_start_campaign()
+	else:
+		_setup_battle()
 
 
 func _unit_at(cell: Vector2i) -> Unit:
