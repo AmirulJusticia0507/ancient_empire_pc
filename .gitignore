@@ -6,7 +6,6 @@
 # Godot 4
 .godot/
 /android/
-/export_presets.cfg
 
 # Godot / .NET (C#)
 .mono/
@@ -14,6 +13,9 @@ data_*/
 mono_crash.*.json
 bin/
 obj/
+
+# Build output
+/build/
 
 # Generated test artifacts
 tests/shot.png

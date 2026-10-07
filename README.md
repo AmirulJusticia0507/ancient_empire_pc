@@ -97,6 +97,45 @@ godot --headless --path . res://tests/smoke.tscn
 
 Keluaran `SMOKE OK` menandakan logika dasar (pilih unit, gerak, giliran musuh, restart) berjalan.
 
+### Main di browser (ekspor Web)
+
+Godot bisa mengekspor game ke HTML5 (WebAssembly + WebGL 2.0) sehingga dapat dimainkan langsung di browser. Syarat: proyek memakai **GDScript** (ekspor web Godot 4 belum mendukung C#) dan browser berbasis Chromium atau Firefox.
+
+**1. Pasang export template** (sekali saja)
+
+- Lewat editor: **Editor › Manage Export Templates… › Download and Install**.
+- Atau unduh berkas template sesuai versi Godot dari https://godotengine.org/download lalu pasang lewat menu yang sama.
+
+Template bersifat global (dipakai semua proyek), jadi cukup dipasang sekali per versi Godot.
+
+**2. Siapkan preset Web**
+
+Preset **Web** sudah tersedia di repo ini (`export_presets.cfg`), dengan **Thread Support** nonaktif (mode *single-thread* tidak butuh header server khusus). Bila ingin mengubahnya, buka **Project › Export… › Web**. Opsional: aktifkan **Progressive Web App › Enable** agar bisa dimainkan offline.
+
+File `export_presets.cfg` sengaja ikut ter-*commit* agar ekspor via CLI reprodusibel. Catatan: ekspor Web Godot 4 belum mendukung proyek C#.
+
+**3. Lakukan ekspor**
+
+Lewat editor: klik **Export Project**, target `build/web/index.html`.
+
+Lewat CLI:
+
+```
+godot --headless --path . --export-release "Web" build/web/index.html
+```
+
+**4. Jalankan lewat web server lokal**
+
+Berkas harus disajikan lewat HTTP, bukan dibuka langsung sebagai `file://`. Cara termudah dengan Python:
+
+```
+python -m http.server 8060 --directory build/web
+```
+
+Lalu buka http://localhost:8060 di browser.
+
+> Catatan: bila **Thread Support** diaktifkan, server wajib mengirim header `Cross-Origin-Opener-Policy: same-origin` dan `Cross-Origin-Embedder-Policy: require-corp`. Godot menyediakan skrip `serve.py` untuk ini: https://github.com/godotengine/godot/blob/master/platform/web/serve.py (`python serve.py --root build/web`). Untuk hosting produksi yang tidak bisa mengatur header, aktifkan opsi **Progressive Web App**.
+
 ### Status gameplay
 
 Prototipe awal sudah memuat: papan grid, unit pemain dan musuh, pergerakan berbasis jangkauan, penyerangan unit bersebelahan, giliran bergantian dengan AI musuh sederhana, serta kondisi menang/kalah dan mulai ulang. Aturan, unit, dan aset orisinal masih akan dikembangkan.
