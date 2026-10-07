@@ -53,6 +53,7 @@ var message := ""
 var time := 0.0
 var animating := false
 var floaters := []
+var god_mode := false
 
 var end_turn_btn: Button
 var restart_btn: Button
@@ -150,6 +151,7 @@ func _setup_units() -> void:
 	floaters.clear()
 	turn = 0
 	game_over = false
+	god_mode = false
 	message = "Giliran pemain. Pilih unit, lalu klik petak tujuan."
 	_refresh_ui()
 	queue_redraw()
@@ -275,8 +277,15 @@ func _draw_hud() -> void:
 	_draw_text("MUSUH", Vector2(790, 330), 14, MUTED_COL)
 	_draw_team_stat(1, Vector2(790, 340))
 
+	_draw_text("CHEAT", Vector2(790, 445), 14, MUTED_COL)
+	_draw_text("K  hapus semua musuh      H  pulihkan penuh", Vector2(790, 468), 14, Color(0.75, 0.73, 0.68))
+	_draw_text("G  mode kebal               M  gerak lagi", Vector2(790, 490), 14, Color(0.75, 0.73, 0.68))
+	_draw_text("P  +5 ATK", Vector2(790, 512), 14, Color(0.75, 0.73, 0.68))
+	if god_mode:
+		_draw_text("GOD MODE AKTIF", Vector2(1120, 512), 14, ACCENT)
+
 	if game_over:
-		_draw_centered("Tekan R atau tombol Mulai Ulang", Rect2(Vector2(760, 470), Vector2(480, 40)), 18, ACCENT_WARM)
+		_draw_centered("Tekan R atau tombol Mulai Ulang", Rect2(Vector2(760, 578), Vector2(480, 30)), 18, ACCENT_WARM)
 
 
 func _draw_team_stat(team: int, top_left: Vector2) -> void:
@@ -324,6 +333,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			_restart()
 		elif event.keycode == KEY_E and not game_over:
 			_on_end_turn_pressed()
+		elif event.keycode == KEY_K:
+			_cheat_kill_all()
+		elif event.keycode == KEY_H:
+			_cheat_heal()
+		elif event.keycode == KEY_G:
+			_cheat_toggle_god()
+		elif event.keycode == KEY_M:
+			_cheat_reset_moves()
+		elif event.keycode == KEY_P:
+			_cheat_power()
 		return
 	if event is InputEventMouseMotion:
 		var cell := _cell_at(event.position)
@@ -389,6 +408,10 @@ func _move_unit(u: Unit, cell: Vector2i) -> void:
 
 
 func _attack(attacker: Unit, defender: Unit) -> void:
+	if god_mode and defender.team == 0:
+		_spawn_floater(defender.visual_pos + Vector2(0, -10), "IMMUNE", ACCENT)
+		message = "Cheat aktif: unit pemain kebal!"
+		return
 	defender.hp -= attacker.atk
 	var who := "Pemain" if attacker.team == 0 else "Musuh"
 	message = "%s menyerang! Musuh kehilangan %d HP." % [who, attacker.atk]
@@ -403,6 +426,57 @@ func _attack(attacker: Unit, defender: Unit) -> void:
 
 func _spawn_floater(pos: Vector2, text: String, color: Color) -> void:
 	floaters.append({"pos": pos, "text": text, "color": color, "life": 0.9})
+	queue_redraw()
+
+
+func _cheat_kill_all() -> void:
+	var dead := []
+	for u in units:
+		if u.team == 1:
+			_spawn_floater(u.visual_pos + Vector2(0, -34), "KO", ACCENT_WARM)
+			dead.append(u)
+	for u in dead:
+		units.erase(u)
+	message = "Cheat: semua musuh dilenyapkan!"
+	selected = null
+	reachable = {}
+	attackable = {}
+	_check_game_over()
+	queue_redraw()
+
+
+func _cheat_heal() -> void:
+	for u in units:
+		if u.team == 0:
+			u.hp = u.max_hp
+			_spawn_floater(u.visual_pos + Vector2(0, -10), "FULL", HP_OK)
+	message = "Cheat: semua unit pemain dipulihkan."
+	queue_redraw()
+
+
+func _cheat_toggle_god() -> void:
+	god_mode = not god_mode
+	message = "Cheat: mode kebal %s." % ("AKTIF" if god_mode else "NONAKTIF")
+	queue_redraw()
+
+
+func _cheat_reset_moves() -> void:
+	for u in units:
+		if u.team == 0:
+			u.moved = false
+	selected = null
+	reachable = {}
+	attackable = {}
+	message = "Cheat: semua unit pemain bisa bergerak lagi."
+	queue_redraw()
+
+
+func _cheat_power() -> void:
+	for u in units:
+		if u.team == 0:
+			u.atk += 5
+			_spawn_floater(u.visual_pos + Vector2(0, -10), "+5 ATK", ACCENT_WARM)
+	message = "Cheat: serangan unit pemain +5."
 	queue_redraw()
 
 

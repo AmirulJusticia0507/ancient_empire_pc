@@ -30,6 +30,13 @@ func _ready() -> void:
 	main._restart()
 	_assert(main.units.size() == 7 and main.turn == 0, "restart mengembalikan state")
 
+	main._cheat_heal()
+	main._cheat_power()
+	main._cheat_toggle_god()
+	_assert(main.god_mode, "cheat god mode aktif")
+	main._cheat_kill_all()
+	_assert(main.game_over, "cheat hapus semua musuh memicu kemenangan")
+
 	print("SMOKE OK")
 	get_tree().quit(0)
 

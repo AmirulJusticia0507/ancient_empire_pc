@@ -136,6 +136,16 @@ Lalu buka http://localhost:8060 di browser.
 
 > Catatan: bila **Thread Support** diaktifkan, server wajib mengirim header `Cross-Origin-Opener-Policy: same-origin` dan `Cross-Origin-Embedder-Policy: require-corp`. Godot menyediakan skrip `serve.py` untuk ini: https://github.com/godotengine/godot/blob/master/platform/web/serve.py (`python serve.py --root build/web`). Untuk hosting produksi yang tidak bisa mengatur header, aktifkan opsi **Progressive Web App**.
 
+### Cheat (untuk uji coba)
+
+Saat bermain, tekan tombol berikut:
+
+- **K** — hapus semua musuh (menang instan).
+- **H** — pulihkan penuh semua unit pemain.
+- **G** — aktif/nonaktif *god mode* (unit pemain kebal).
+- **M** — semua unit pemain bisa bergerak lagi.
+- **P** — serangan unit pemain +5.
+
 ### Status gameplay
 
 Prototipe awal sudah memuat: papan grid, unit pemain dan musuh, pergerakan berbasis jangkauan, penyerangan unit bersebelahan, giliran bergantian dengan AI musuh sederhana, serta kondisi menang/kalah dan mulai ulang. Aturan, unit, dan aset orisinal masih akan dikembangkan.

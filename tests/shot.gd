@@ -5,6 +5,7 @@ func _ready() -> void:
 	add_child(main)
 	await get_tree().process_frame
 	main._on_click(Vector2i(1, 1))
+	main._cheat_toggle_god()
 	for i in 5:
 		await get_tree().process_frame
 	var img := get_viewport().get_texture().get_image()
