@@ -23,6 +23,25 @@ const TEXT_COL := Color("#e5e7eb")
 const MUTED_COL := Color("#94a3b8")
 const HP_OK := Color("#22c55e")
 const HP_LOW := Color("#f97316")
+const GOLD_COL := Color("#facc15")
+const BARRACKS := "barracks"
+const MARKET := "market"
+const RECRUIT_COST := 60
+const ARCHER_COST := 90
+const POTION_COST := 40
+const WHETSTONE_COST := 50
+const KILL_REWARD := 50
+
+
+class Building:
+	var pos: Vector2i
+	var type: String
+	var owner: int
+
+	func _init(p: Vector2i, t: String, o: int) -> void:
+		pos = p
+		type = t
+		owner = o
 
 
 class Unit:
@@ -54,9 +73,14 @@ var time := 0.0
 var animating := false
 var floaters := []
 var god_mode := false
+var buildings := []
+var player_gold := 0
+var active_building: Building = null
 
 var end_turn_btn: Button
 var restart_btn: Button
+var build_buttons := []
+var close_menu_btn: Button
 var font: Font
 
 var sb_board: StyleBoxFlat
@@ -115,6 +139,25 @@ func _build_ui() -> void:
 	restart_btn = _make_button("Mulai Ulang  (R)", Vector2(panel_x + 30, 615), Vector2(420, 58))
 	restart_btn.pressed.connect(_restart)
 
+	var bx := 203.0
+	var ys := [300.0, 356.0, 412.0, 468.0]
+	var defs := [
+		["recruit_warrior", "Rekrut Prajurit  —  %dg" % RECRUIT_COST],
+		["recruit_archer", "Rekrut Pemanah  —  %dg" % ARCHER_COST],
+		["potion", "Beli Ramuan (pulih penuh)  —  %dg" % POTION_COST],
+		["whetstone", "Beli Asah (+2 ATK)  —  %dg" % WHETSTONE_COST]
+	]
+	for i in defs.size():
+		var btn := _make_button(defs[i][1], Vector2(bx, ys[i]), Vector2(400, 48))
+		btn.add_theme_font_size_override("font_size", 18)
+		btn.visible = false
+		btn.pressed.connect(_on_build_action.bind(defs[i][0]))
+		build_buttons.append(btn)
+	close_menu_btn = _make_button("Tutup", Vector2(bx, 500), Vector2(400, 44))
+	close_menu_btn.add_theme_font_size_override("font_size", 18)
+	close_menu_btn.visible = false
+	close_menu_btn.pressed.connect(_close_build_menu)
+
 
 func _make_button(text: String, pos: Vector2, size: Vector2) -> Button:
 	var b := Button.new()
@@ -145,6 +188,12 @@ func _setup_units() -> void:
 	units.append(Unit.new(Vector2i(7, 5), 1, 12, 3))
 	for u in units:
 		u.visual_pos = _cell_center(u.pos)
+	buildings.clear()
+	buildings.append(Building.new(Vector2i(0, 0), MARKET, 0))
+	buildings.append(Building.new(Vector2i(0, 5), BARRACKS, 0))
+	buildings.append(Building.new(Vector2i(8, 0), BARRACKS, 1))
+	buildings.append(Building.new(Vector2i(8, 5), MARKET, 1))
+	player_gold = 200
 	selected = null
 	reachable = {}
 	attackable = {}
@@ -152,7 +201,8 @@ func _setup_units() -> void:
 	turn = 0
 	game_over = false
 	god_mode = false
-	message = "Giliran pemain. Pilih unit, lalu klik petak tujuan."
+	_close_build_menu()
+	message = "Giliran pemain. Pilih unit, atau klik bangunanmu untuk membangun."
 	_refresh_ui()
 	queue_redraw()
 
@@ -180,8 +230,10 @@ func _draw() -> void:
 	draw_style_box(sb_board, _board_rect())
 	_draw_tiles()
 	_draw_highlights()
+	_draw_buildings()
 	_draw_units()
 	_draw_hud()
+	_draw_build_menu()
 	_draw_floaters()
 
 
@@ -209,6 +261,27 @@ func _draw_highlights() -> void:
 		draw_style_box(sb_move, _cell_rect(cell))
 	for cell in attackable.keys():
 		draw_style_box(sb_attack, _cell_rect(cell))
+
+
+func _draw_buildings() -> void:
+	for b in buildings:
+		var center := _cell_center(b.pos)
+		var col := PLAYER_COL if b.owner == 0 else ENEMY_COL
+		var base := center + Vector2(0, 4)
+		draw_rect(Rect2(base + Vector2(-TILE * 0.28, -TILE * 0.10), Vector2(TILE * 0.56, TILE * 0.42)), col.darkened(0.25), true)
+		draw_rect(Rect2(base + Vector2(-TILE * 0.28, -TILE * 0.10), Vector2(TILE * 0.56, TILE * 0.42)), col, false, 2.0)
+		var roof := PackedVector2Array([
+			base + Vector2(-TILE * 0.34, -TILE * 0.10),
+			base + Vector2(0, -TILE * 0.44),
+			base + Vector2(TILE * 0.34, -TILE * 0.10)
+		])
+		draw_colored_polygon(roof, col)
+		if b.type == MARKET:
+			_draw_text("$", base + Vector2(-6, 18), 18, Color("#0b1120"))
+		else:
+			_draw_text("A", base + Vector2(-7, 18), 18, Color("#0b1120"))
+		if b == active_building:
+			draw_rect(_cell_rect(b.pos).grow(1.0), ACCENT_WARM, false, 3.0)
 
 
 func _draw_units() -> void:
@@ -253,8 +326,10 @@ func _draw_hud() -> void:
 	_draw_text("ANCIENT EMPIRE", Vector2(70, 90), 40, TEXT_COL)
 	_draw_text("PC  •  turn-based tactics prototype", Vector2(72, 122), 16, MUTED_COL)
 	_draw_text(message, Vector2(70, 668), 18, TEXT_COL)
-	var hint := "Klik unit sendiri  ›  klik petak untuk bergerak  ›  klik musuh bersebelahan untuk menyerang."
-	_draw_text(hint, Vector2(70, 694), 14, MUTED_COL)
+	var hint := "Klik unit › petak untuk bergerak › musuh bersebelahan untuk serang."
+	_draw_text(hint, Vector2(70, 692), 14, MUTED_COL)
+	_draw_text("Bangunan: $ pasar (item)  •  A barak (rekrut)  •  klik bangunanmu saat giliranmu.",
+		Vector2(70, 714), 13, Color(0.6, 0.64, 0.7))
 
 	_draw_text("STATUS GILIRAN", Vector2(790, 130), 14, MUTED_COL)
 	var pill := Rect2(Vector2(790, 140), Vector2(420, 52))
@@ -273,6 +348,7 @@ func _draw_hud() -> void:
 	_draw_centered(text, pill, 22, col)
 
 	_draw_text("PEMAIN", Vector2(790, 230), 14, MUTED_COL)
+	_draw_text("Gold: %d" % player_gold, Vector2(1090, 230), 14, GOLD_COL)
 	_draw_team_stat(0, Vector2(790, 240))
 	_draw_text("MUSUH", Vector2(790, 330), 14, MUTED_COL)
 	_draw_team_stat(1, Vector2(790, 340))
@@ -360,6 +436,14 @@ func _on_click(cell: Vector2i) -> void:
 		return
 	if not _in_bounds(cell):
 		return
+	var b = _building_at(cell)
+	if b != null:
+		if b.owner == 0:
+			_open_build_menu(b)
+		else:
+			message = "Itu bangunan milik musuh."
+		queue_redraw()
+		return
 	var u = _unit_at(cell)
 	if u != null and u.team == 0:
 		if u.moved:
@@ -418,9 +502,13 @@ func _attack(attacker: Unit, defender: Unit) -> void:
 	_spawn_floater(defender.visual_pos + Vector2(0, -10), "-%d" % attacker.atk, ENEMY_COL if defender.team == 1 else PLAYER_COL)
 	if defender.hp <= 0:
 		var dead_pos: Vector2 = defender.visual_pos
+		var was_enemy := defender.team == 1
 		units.erase(defender)
 		_spawn_floater(dead_pos + Vector2(0, -34), "KO", ACCENT_WARM)
 		message = "%s menghabisi satu unit!" % who
+		if was_enemy and attacker.team == 0:
+			player_gold += KILL_REWARD
+			_spawn_floater(dead_pos + Vector2(0, -60), "+%dg" % KILL_REWARD, GOLD_COL)
 	_check_game_over()
 
 
@@ -492,7 +580,7 @@ func _compute_reachable(unit: Unit) -> Dictionary:
 			var nxt: Vector2i = cur + dir
 			if not _in_bounds(nxt) or result.has(nxt):
 				continue
-			if _unit_at(nxt) != null:
+			if _unit_at(nxt) != null or _building_at(nxt) != null:
 				continue
 			result[nxt] = dist + 1
 			frontier.append(nxt)
@@ -582,6 +670,8 @@ func _step_toward(unit: Unit, target: Unit) -> Vector2i:
 				continue
 			if _unit_at(nxt) != null and nxt != target.pos:
 				continue
+			if _building_at(nxt) != null:
+				continue
 			prev[nxt] = cur
 			frontier.append(nxt)
 	if not prev.has(target.pos):
@@ -619,6 +709,126 @@ func _unit_at(cell: Vector2i) -> Unit:
 		if u.pos == cell:
 			return u
 	return null
+
+
+func _building_at(cell: Vector2i) -> Building:
+	for b in buildings:
+		if b.pos == cell:
+			return b
+	return null
+
+
+func _spawn_unit_near(building: Building, team: int, hp: int, atk: int) -> bool:
+	var candidates := []
+	for dir in DIRS:
+		var c: Vector2i = building.pos + dir
+		if _in_bounds(c) and _unit_at(c) == null and _building_at(c) == null:
+			candidates.append(c)
+	if candidates.is_empty():
+		for y in GRID_H:
+			for x in GRID_W:
+				var c := Vector2i(x, y)
+				if _unit_at(c) == null and _building_at(c) == null:
+					candidates.append(c)
+		if candidates.is_empty():
+			return false
+	var spawn: Vector2i = candidates[0]
+	var best := 1 << 30
+	for c in candidates:
+		var d: int = absi(c.x - building.pos.x) + absi(c.y - building.pos.y)
+		if d < best:
+			best = d
+			spawn = c
+	var u := Unit.new(spawn, team, hp, atk)
+	u.visual_pos = _cell_center(spawn)
+	units.append(u)
+	_spawn_floater(u.visual_pos + Vector2(0, -20), "BARU", GOLD_COL)
+	return true
+
+
+func _open_build_menu(building: Building) -> void:
+	active_building = building
+	var is_barracks := building.type == BARRACKS
+	build_buttons[0].visible = is_barracks
+	build_buttons[1].visible = is_barracks
+	build_buttons[2].visible = not is_barracks
+	build_buttons[3].visible = not is_barracks
+	build_buttons[0].position = Vector2(203, 320)
+	build_buttons[1].position = Vector2(203, 392)
+	build_buttons[2].position = Vector2(203, 320)
+	build_buttons[3].position = Vector2(203, 392)
+	build_buttons[0].disabled = player_gold < RECRUIT_COST
+	build_buttons[1].disabled = player_gold < ARCHER_COST
+	build_buttons[2].disabled = player_gold < POTION_COST
+	build_buttons[3].disabled = player_gold < WHETSTONE_COST
+	close_menu_btn.visible = true
+	message = "%s dibuka. Gold: %d." % ["Barak" if is_barracks else "Pasar", player_gold]
+	queue_redraw()
+
+
+func _close_build_menu() -> void:
+	active_building = null
+	for btn in build_buttons:
+		btn.visible = false
+	if close_menu_btn:
+		close_menu_btn.visible = false
+
+
+func _on_build_action(action: String) -> void:
+	match action:
+		"recruit_warrior":
+			_try_recruit(14, 4, RECRUIT_COST, "Prajurit")
+		"recruit_archer":
+			_try_recruit(10, 6, ARCHER_COST, "Pemanah")
+		"potion":
+			_try_item("potion")
+		"whetstone":
+			_try_item("whetstone")
+
+
+func _try_recruit(hp: int, atk: int, cost: int, label: String) -> void:
+	if active_building == null or player_gold < cost:
+		message = "Gold tidak cukup."
+		return
+	if _spawn_unit_near(active_building, 0, hp, atk):
+		player_gold -= cost
+		message = "%s direkrut (-%dg). Sisa gold: %d." % [label, cost, player_gold]
+	else:
+		message = "Tidak ada petak kosong untuk unit baru."
+	_open_build_menu(active_building)
+
+
+func _try_item(kind: String) -> void:
+	if selected == null or selected.team != 0:
+		message = "Pilih dulu unit pemain yang ingin dipakai item."
+		return
+	var cost := POTION_COST if kind == "potion" else WHETSTONE_COST
+	if player_gold < cost:
+		message = "Gold tidak cukup."
+		return
+	if kind == "potion":
+		selected.hp = selected.max_hp
+		_spawn_floater(selected.visual_pos + Vector2(0, -10), "FULL", HP_OK)
+		message = "Ramuan dipakai: unit pulih penuh (-%dg)." % cost
+	else:
+		selected.atk += 2
+		_spawn_floater(selected.visual_pos + Vector2(0, -10), "+2 ATK", ACCENT_WARM)
+		message = "Asah dipakai: +2 ATK (-%dg)." % cost
+	player_gold -= cost
+	_open_build_menu(active_building)
+	queue_redraw()
+
+
+func _draw_build_menu() -> void:
+	if active_building == null:
+		return
+	var panel := Rect2(Vector2(173, 220), Vector2(460, 380))
+	draw_style_box(_make_box(Color(0.05, 0.07, 0.13, 0.97), 20, 2, ACCENT, 20, Color(0, 0, 0, 0.55)), panel)
+	var title := "BARAK" if active_building.type == BARRACKS else "PASAR"
+	_draw_centered(title, Rect2(Vector2(173, 240), Vector2(460, 40)), 26, ACCENT)
+	_draw_centered("Gold: %d" % player_gold, Rect2(Vector2(173, 276), Vector2(460, 24)), 16, GOLD_COL)
+	if active_building.type == MARKET:
+		_draw_centered("Pilih unit pemain dulu untuk memakai item.", Rect2(Vector2(173, 448), Vector2(460, 24)), 13, MUTED_COL)
 
 
 func _board_rect() -> Rect2:

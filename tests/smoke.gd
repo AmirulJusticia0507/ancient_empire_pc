@@ -30,6 +30,20 @@ func _ready() -> void:
 	main._restart()
 	_assert(main.units.size() == 7 and main.turn == 0, "restart mengembalikan state")
 
+	_assert(main.buildings.size() == 4, "bangunan tersedia")
+	var before_count = main.units.size()
+	var gold_before = main.player_gold
+	main._open_build_menu(main.buildings[1])
+	main._on_build_action("recruit_warrior")
+	_assert(main.units.size() == before_count + 1, "rekrut menambah unit pemain")
+	_assert(main.player_gold == gold_before - 60, "rekrut memotong gold")
+	main._close_build_menu()
+	main.selected = main.units[0]
+	main._open_build_menu(main.buildings[0])
+	main._on_build_action("whetstone")
+	_assert(main.units[0].atk == 6, "asah menambah ATK +2")
+	main._close_build_menu()
+
 	main._cheat_heal()
 	main._cheat_power()
 	main._cheat_toggle_god()

@@ -136,9 +136,18 @@ Lalu buka http://localhost:8060 di browser.
 
 > Catatan: bila **Thread Support** diaktifkan, server wajib mengirim header `Cross-Origin-Opener-Policy: same-origin` dan `Cross-Origin-Embedder-Policy: require-corp`. Godot menyediakan skrip `serve.py` untuk ini: https://github.com/godotengine/godot/blob/master/platform/web/serve.py (`python serve.py --root build/web`). Untuk hosting produksi yang tidak bisa mengatur header, aktifkan opsi **Progressive Web App**.
 
+### Bangunan dan ekonomi
+
+Di peta terdapat bangunan milik masing-masing pihak (menghalangi pergerakan). Saat giliranmu, **klik bangunanmu** untuk membuka menunya:
+
+- **Barak (A)** — rekrut unit baru: *Prajurit* (60g) atau *Pemanah* (90g). Unit muncul di petak kosong terdekat.
+- **Pasar ($)** — beli item untuk unit pemain yang sedang dipilih: *Ramuan* (40g, pulihkan penuh) atau *Asah* (50g, +2 ATK).
+
+Ekonomi: pemain mulai dengan **200 gold**, dan mendapat **+50 gold** setiap kali menghabisi unit musuh.
+
 ### Cheat (untuk uji coba)
 
-Saat bermain, tekan tombol berikut:
+Cheat **hanya memengaruhi pemain**, tidak menyentuh musuh. Saat bermain, tekan tombol berikut:
 
 - **K** — hapus semua musuh (menang instan).
 - **H** — pulihkan penuh semua unit pemain.
