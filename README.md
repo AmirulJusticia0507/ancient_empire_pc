@@ -29,6 +29,8 @@ Strateginya bukan hanya menyerang: lindungi unit yang rentan, pilih posisi yang 
 
 AI musuh memprioritaskan unit lemah yang bisa diserang, merespons ancaman di sekitar markas, serta bergerak menuju bangunan pemain untuk mengudeta ketika jalurnya memungkinkan.
 
+Terrain memengaruhi taktik: **hutan** mengurangi 2 damage yang diterima, **jalan** hanya memakai setengah poin gerak, sedangkan **air** memakai dua poin gerak. AI juga memakai biaya terrain ini saat mencari jalur.
+
 ## Arah proyek ini
 
 README ini menjelaskan game yang menjadi inspirasi dan gambaran arah desain; mekanik di atas **belum diimplementasikan** di proyek ini. Tujuannya adalah membuat game strategi taktis berbasis giliran untuk PC dengan identitas dan aset orisinal, bukan menyalin materi milik game aslinya.

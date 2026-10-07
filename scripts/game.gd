@@ -560,7 +560,7 @@ func _draw_tiles() -> void:
 			var cell := Vector2i(x, y)
 			var terrain := _terrain_at(cell)
 			var sb := sb_tile_a if (x + y) % 2 == 0 else sb_tile_b
-			if terrain == "grass":
+			if terrain in ["grass", "forest"]:
 				sb = sb_grass_a if (x + y) % 2 == 0 else sb_grass_b
 			elif terrain == "water":
 				sb = sb_water
@@ -577,6 +577,8 @@ func _terrain_at(cell: Vector2i) -> String:
 		return "water"
 	if cell.y == 4 or cell in [Vector2i(3, 3), Vector2i(7, 5)]:
 		return "road"
+	if (cell.x * 7 + cell.y * 11) % 4 == 0:
+		return "forest"
 	return "grass"
 
 
@@ -589,7 +591,7 @@ func _draw_terrain_detail(cell: Vector2i, terrain: String) -> void:
 			draw_line(Vector2(center.x - 20, y), Vector2(center.x + 20, y), Color(0.25, 0.68, 0.84, 0.35), 2.0)
 	elif terrain == "road":
 		draw_line(Vector2(rect.position.x + 10, center.y), Vector2(rect.end.x - 10, center.y), Color(0.83, 0.68, 0.45, 0.20), 3.0)
-	elif (cell.x * 7 + cell.y * 11) % 4 == 0:
+	elif terrain == "forest":
 		for offset in [-7.0, 0.0, 7.0]:
 			draw_line(center + Vector2(offset, 18), center + Vector2(offset + 3, 10), Color(0.35, 0.68, 0.42, 0.32), 1.5)
 
@@ -902,10 +904,12 @@ func _attack(attacker: Unit, defender: Unit) -> void:
 		_spawn_floater(defender.visual_pos + Vector2(0, -10), "IMMUNE", ACCENT)
 		message = "Cheat aktif: unit pemain kebal!"
 		return
-	defender.hp -= attacker.atk
+	var defense := 2 if _terrain_at(defender.pos) == "forest" else 0
+	var damage := maxi(attacker.atk - defense, 1)
+	defender.hp -= damage
 	var who := "Pemain" if attacker.team == 0 else "Musuh"
-	message = "%s menyerang! Musuh kehilangan %d HP." % [who, attacker.atk]
-	_spawn_floater(defender.visual_pos + Vector2(0, -10), "-%d" % attacker.atk, ENEMY_COL if defender.team == 1 else PLAYER_COL)
+	message = "%s menyerang! Target kehilangan %d HP%s." % [who, damage, " (hutan -2)" if defense > 0 else ""]
+	_spawn_floater(defender.visual_pos + Vector2(0, -10), "-%d" % damage, ENEMY_COL if defender.team == 1 else PLAYER_COL)
 	if defender.hp <= 0:
 		var dead_pos: Vector2 = defender.visual_pos
 		var was_enemy := defender.team == 1
@@ -1006,22 +1010,33 @@ func _cheat_gold() -> void:
 
 
 func _compute_reachable(unit: Unit) -> Dictionary:
-	var result := {unit.pos: 0}
+	var result := {unit.pos: 0.0}
 	var frontier := [unit.pos]
 	while not frontier.is_empty():
+		frontier.sort_custom(func(a, b): return result[a] < result[b])
 		var cur: Vector2i = frontier.pop_front()
-		var dist: int = result[cur]
+		var dist: float = result[cur]
 		if dist >= unit.move_range:
 			continue
 		for dir in DIRS:
 			var nxt: Vector2i = cur + dir
-			if not _in_bounds(nxt) or result.has(nxt):
+			if not _in_bounds(nxt):
 				continue
 			if _unit_at(nxt) != null or _building_at(nxt) != null:
 				continue
-			result[nxt] = dist + 1
-			frontier.append(nxt)
+			var next_cost := dist + _terrain_move_cost(nxt)
+			if next_cost <= unit.move_range and (not result.has(nxt) or next_cost < result[nxt]):
+				result[nxt] = next_cost
+				if not frontier.has(nxt):
+					frontier.append(nxt)
 	return result
+
+
+func _terrain_move_cost(cell: Vector2i) -> float:
+	match _terrain_at(cell):
+		"road": return 0.5
+		"water": return 2.0
+		_: return 1.0
 
 
 func _compute_attackable(unit: Unit) -> Dictionary:
@@ -1168,21 +1183,27 @@ func _step_toward_cell(unit: Unit, target: Vector2i, stop_adjacent := false) -> 
 	if stop_adjacent and _manhattan(unit.pos, target) <= 1:
 		return unit.pos
 	var prev := {unit.pos: unit.pos}
+	var costs := {unit.pos: 0.0}
 	var frontier := [unit.pos]
 	while not frontier.is_empty():
+		frontier.sort_custom(func(a, b): return costs[a] < costs[b])
 		var cur: Vector2i = frontier.pop_front()
 		if cur == target:
 			break
 		for dir in DIRS:
 			var nxt: Vector2i = cur + dir
-			if not _in_bounds(nxt) or prev.has(nxt):
+			if not _in_bounds(nxt):
 				continue
 			if _unit_at(nxt) != null and nxt != target:
 				continue
 			if _building_at(nxt) != null and nxt != target:
 				continue
-			prev[nxt] = cur
-			frontier.append(nxt)
+			var next_cost: float = costs[cur] + _terrain_move_cost(nxt)
+			if not costs.has(nxt) or next_cost < costs[nxt]:
+				costs[nxt] = next_cost
+				prev[nxt] = cur
+				if not frontier.has(nxt):
+					frontier.append(nxt)
 	if not prev.has(target):
 		return unit.pos
 	var node: Vector2i = target

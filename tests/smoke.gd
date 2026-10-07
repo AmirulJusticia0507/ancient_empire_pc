@@ -54,6 +54,16 @@ func _ready() -> void:
 	ai_enemy.pos = Vector2i(1, 0)
 	_assert(main._try_enemy_capture(ai_enemy, player_building) and player_building.owner == 1, "AI dapat mengudeta bangunan pemain")
 	main._setup_battle()
+	_assert(main._terrain_move_cost(Vector2i(0, 4)) < main._terrain_move_cost(Vector2i(4, 0)), "jalan lebih cepat dan air memperlambat gerak")
+	var terrain_attacker = main.units.filter(func(u): return u.team == 0)[0]
+	var forest_defender = main.units.filter(func(u): return u.team == 1)[0]
+	terrain_attacker.atk = 4
+	forest_defender.pos = Vector2i(0, 0)
+	forest_defender.hp = 10
+	forest_defender.max_hp = 10
+	main._attack(terrain_attacker, forest_defender)
+	_assert(forest_defender.hp == 8, "hutan mengurangi damage sebesar 2")
+	main._setup_battle()
 
 	var first_player = main.units[0]
 	main._on_click(first_player.pos)

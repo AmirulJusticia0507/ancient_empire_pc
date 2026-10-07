@@ -32,13 +32,13 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 - [x] Jaga markas saat terancam.
 - [x] Dekati dan kudeta bangunan pemain.
 
-## 5. Terrain berpengaruh `[ ]`
+## 5. Terrain berpengaruh `[x]`
 
 - [x] Tampilan petak rumput, jalan, dan air sudah tersedia.
-- [ ] Hutan/rumput memberi bonus pertahanan.
-- [ ] Jalan menambah jangkauan gerak.
-- [ ] Air memperlambat pergerakan.
-- [ ] AI memperhitungkan biaya dan manfaat terrain.
+- [x] Hutan memberi bonus pertahanan.
+- [x] Jalan menambah jangkauan gerak.
+- [x] Air memperlambat pergerakan.
+- [x] AI memperhitungkan biaya terrain saat mencari jalur.
 
 ## 6. Audio dan animasi `[-]`
 
@@ -63,7 +63,6 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 
 ## Urutan pengerjaan berikutnya
 
-1. Aktifkan efek terrain.
-2. Tambahkan audio dan animasi lanjutan.
-3. Tambahkan pengaturan dan pause.
-4. Tambahkan mode endless.
+1. Tambahkan audio dan animasi lanjutan.
+2. Tambahkan pengaturan dan pause.
+3. Tambahkan mode endless.
