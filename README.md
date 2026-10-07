@@ -149,7 +149,7 @@ Setiap level ke-10 menghadirkan boss **warlord** beserta pasukannya. Level 100 a
 Di peta terdapat bangunan milik masing-masing pihak (menghalangi pergerakan). Saat giliranmu, **klik bangunanmu** untuk membuka menunya:
 
 - **Barak (A)** — rekrut unit baru: *Prajurit* (60g) atau *Pemanah* (90g). Unit muncul di petak kosong terdekat.
-- **Pasar ($)** — beli item untuk unit pemain yang sedang dipilih: *Ramuan* (40g, pulihkan penuh) atau *Asah* (50g, +2 ATK).
+- **Pasar ($)** — beli *Ramuan* (40g), *Asah* (50g), atau rekrut **Naga** (600g). Naga memiliki 45 HP, 10 ATK, gerak 2 petak, dan jangkauan serang 2 petak.
 
 Untuk mengudeta bangunan musuh, tempatkan unit pemain tepat di sebelah bangunan lalu klik bangunannya. Bangunan langsung berpindah kepemilikan, dapat digunakan pemain, dan memberi bonus **100 gold**.
 

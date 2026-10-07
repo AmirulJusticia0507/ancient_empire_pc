@@ -32,6 +32,7 @@ const BARRACKS := "barracks"
 const MARKET := "market"
 const RECRUIT_COST := 60
 const ARCHER_COST := 90
+const DRAGON_COST := 600
 const POTION_COST := 40
 const WHETSTONE_COST := 50
 const KILL_REWARD := 50
@@ -200,12 +201,13 @@ func _build_ui() -> void:
 	next_btn.visible = false
 
 	var bx := 203.0
-	var ys := [300.0, 356.0, 412.0, 468.0]
+	var ys := [300.0, 356.0, 412.0, 468.0, 524.0]
 	var defs := [
 		["recruit_warrior", "Rekrut Prajurit  —  %dg" % RECRUIT_COST],
 		["recruit_archer", "Rekrut Pemanah  —  %dg" % ARCHER_COST],
 		["potion", "Beli Ramuan (pulih penuh)  —  %dg" % POTION_COST],
-		["whetstone", "Beli Asah (+2 ATK)  —  %dg" % WHETSTONE_COST]
+		["whetstone", "Beli Asah (+2 ATK)  —  %dg" % WHETSTONE_COST],
+		["recruit_dragon", "Rekrut Naga  —  %dg" % DRAGON_COST]
 	]
 	for i in defs.size():
 		var btn := _make_button(defs[i][1], Vector2(bx, ys[i]), Vector2(400, 48))
@@ -1022,7 +1024,7 @@ func _building_at(cell: Vector2i) -> Building:
 	return null
 
 
-func _spawn_unit_near(building: Building, team: int, hp: int, atk: int, kind := "soldier") -> bool:
+func _spawn_unit_near(building: Building, team: int, hp: int, atk: int, kind := "soldier", move_range := MOVE_RANGE, atk_range := ATTACK_RANGE) -> bool:
 	var candidates := []
 	for dir in DIRS:
 		var c: Vector2i = building.pos + dir
@@ -1043,7 +1045,7 @@ func _spawn_unit_near(building: Building, team: int, hp: int, atk: int, kind := 
 		if d < best:
 			best = d
 			spawn = c
-	var u := Unit.new(spawn, team, hp, atk, kind)
+	var u := Unit.new(spawn, team, hp, atk, kind, move_range, atk_range)
 	u.visual_pos = _cell_center(spawn)
 	units.append(u)
 	_spawn_floater(u.visual_pos + Vector2(0, -20), "BARU", GOLD_COL)
@@ -1057,14 +1059,18 @@ func _open_build_menu(building: Building) -> void:
 	build_buttons[1].visible = is_barracks
 	build_buttons[2].visible = not is_barracks
 	build_buttons[3].visible = not is_barracks
-	build_buttons[0].position = Vector2(203, 320)
-	build_buttons[1].position = Vector2(203, 392)
+	build_buttons[4].visible = not is_barracks
+	build_buttons[0].position = Vector2(203, 330)
+	build_buttons[1].position = Vector2(203, 400)
 	build_buttons[2].position = Vector2(203, 320)
-	build_buttons[3].position = Vector2(203, 392)
+	build_buttons[3].position = Vector2(203, 380)
+	build_buttons[4].position = Vector2(203, 440)
 	build_buttons[0].disabled = player_gold < RECRUIT_COST
 	build_buttons[1].disabled = player_gold < ARCHER_COST
 	build_buttons[2].disabled = player_gold < POTION_COST
 	build_buttons[3].disabled = player_gold < WHETSTONE_COST
+	build_buttons[4].disabled = player_gold < DRAGON_COST
+	close_menu_btn.position = Vector2(203, 510)
 	close_menu_btn.visible = true
 	message = "%s dibuka. Gold: %d." % ["Barak" if is_barracks else "Pasar", player_gold]
 	queue_redraw()
@@ -1088,13 +1094,15 @@ func _on_build_action(action: String) -> void:
 			_try_item("potion")
 		"whetstone":
 			_try_item("whetstone")
+		"recruit_dragon":
+			_try_recruit(45, 10, DRAGON_COST, "Naga", "dragon", 2, 2)
 
 
-func _try_recruit(hp: int, atk: int, cost: int, label: String, kind: String) -> void:
+func _try_recruit(hp: int, atk: int, cost: int, label: String, kind: String, move_range := MOVE_RANGE, atk_range := ATTACK_RANGE) -> void:
 	if active_building == null or player_gold < cost:
 		message = "Gold tidak cukup."
 		return
-	if _spawn_unit_near(active_building, 0, hp, atk, kind):
+	if _spawn_unit_near(active_building, 0, hp, atk, kind, move_range, atk_range):
 		player_gold -= cost
 		message = "%s direkrut (-%dg). Sisa gold: %d." % [label, cost, player_gold]
 	else:
@@ -1132,7 +1140,7 @@ func _draw_build_menu() -> void:
 	_draw_centered(title, Rect2(Vector2(173, 240), Vector2(460, 40)), 26, ACCENT)
 	_draw_centered("Gold: %d" % player_gold, Rect2(Vector2(173, 276), Vector2(460, 24)), 16, GOLD_COL)
 	if active_building.type == MARKET:
-		_draw_centered("Pilih unit pemain dulu untuk memakai item.", Rect2(Vector2(173, 448), Vector2(460, 24)), 13, MUTED_COL)
+		_draw_centered("Item butuh unit terpilih • Naga muncul dekat pasar.", Rect2(Vector2(173, 296), Vector2(460, 20)), 12, MUTED_COL)
 
 
 func _board_rect() -> Rect2:
