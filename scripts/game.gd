@@ -88,6 +88,7 @@ var time := 0.0
 var animating := false
 var floaters := []
 var attack_fx := []
+var defeat_fx := []
 var god_mode := false
 var buildings := []
 var player_gold := 0
@@ -120,6 +121,9 @@ var font: Font
 var unit_tex := {}
 var battlefield_tex: Texture2D
 var menu_hero_tex: Texture2D
+var music_player: AudioStreamPlayer
+var sfx_player: AudioStreamPlayer
+var sounds := {}
 
 
 func _load_textures() -> void:
@@ -153,6 +157,7 @@ func _ready() -> void:
 	_load_textures()
 	_build_styleboxes()
 	_build_ui()
+	_setup_audio()
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	if _load_progress():
 		has_started = true
@@ -167,6 +172,48 @@ func _ready() -> void:
 	_refresh_ui()
 	set_process(true)
 	queue_redraw()
+
+
+func _setup_audio() -> void:
+	music_player = AudioStreamPlayer.new()
+	music_player.volume_db = -22.0
+	music_player.stream = _make_tone(55.0, 3.0, 0.22, true, 82.5)
+	add_child(music_player)
+	sfx_player = AudioStreamPlayer.new()
+	sfx_player.volume_db = -8.0
+	add_child(sfx_player)
+	sounds["attack"] = _make_tone(440.0, 0.12, 0.35, false, 660.0)
+	sounds["dragon"] = _make_tone(82.0, 0.45, 0.45, false, 55.0)
+	sounds["ko"] = _make_tone(180.0, 0.24, 0.38, false, 70.0)
+	sounds["victory"] = _make_tone(523.0, 0.55, 0.32, false, 784.0)
+
+
+func _make_tone(frequency: float, duration: float, amplitude: float, loop := false, second_frequency := 0.0) -> AudioStreamWAV:
+	var rate := 22050
+	var frames := int(rate * duration)
+	var data := PackedByteArray()
+	data.resize(frames * 2)
+	for i in frames:
+		var t := float(i) / rate
+		var sample := sin(TAU * frequency * t)
+		if second_frequency > 0.0:
+			sample = (sample + sin(TAU * second_frequency * t)) * 0.5
+		var envelope := 1.0 if loop else minf(1.0, (duration - t) * 8.0)
+		data.encode_s16(i * 2, int(sample * amplitude * envelope * 32767.0))
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = rate
+	stream.data = data
+	if loop:
+		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		stream.loop_end = frames
+	return stream
+
+
+func _play_sound(kind: String) -> void:
+	if sounds.has(kind):
+		sfx_player.stream = sounds[kind]
+		sfx_player.play()
 
 
 func _build_styleboxes() -> void:
@@ -427,6 +474,7 @@ func _setup_battle() -> void:
 	attackable = {}
 	floaters.clear()
 	attack_fx.clear()
+	defeat_fx.clear()
 	turn = 0
 	game_over = false
 	victory = false
@@ -485,7 +533,7 @@ func _refresh_ui() -> void:
 
 func _process(delta: float) -> void:
 	time += delta
-	var active := selected != null or animating or not floaters.is_empty() or not attack_fx.is_empty()
+	var active := selected != null or animating or not floaters.is_empty() or not attack_fx.is_empty() or not defeat_fx.is_empty()
 	for f in floaters:
 		f.life -= delta
 		f.pos.y -= 34.0 * delta
@@ -493,6 +541,9 @@ func _process(delta: float) -> void:
 	for fx in attack_fx:
 		fx.life -= delta
 	attack_fx = attack_fx.filter(func(fx): return fx.life > 0.0)
+	for fx in defeat_fx:
+		fx.life -= delta
+	defeat_fx = defeat_fx.filter(func(fx): return fx.life > 0.0)
 	if active:
 		queue_redraw()
 
@@ -508,6 +559,7 @@ func _draw() -> void:
 	_draw_buildings()
 	_draw_units()
 	_draw_attack_fx()
+	_draw_defeat_fx()
 	_draw_hud()
 	_draw_build_menu()
 	_draw_floaters()
@@ -785,6 +837,15 @@ func _draw_attack_fx() -> void:
 		draw_circle(fx.end, 24.0 * alpha, Color(0.35, 0.82, 1.0, alpha * 0.28))
 
 
+func _draw_defeat_fx() -> void:
+	for fx in defeat_fx:
+		var alpha: float = clampf(fx.life / 0.6, 0.0, 1.0)
+		for i in 10:
+			var angle := TAU * i / 10.0
+			var distance := (1.0 - alpha) * 42.0
+			draw_circle(fx.pos + Vector2.from_angle(angle) * distance, 4.0 * alpha, Color(ACCENT_WARM, alpha))
+
+
 func _draw_text(text: String, pos: Vector2, size: int, color: Color) -> void:
 	draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
 
@@ -900,6 +961,7 @@ func _move_unit(u: Unit, cell: Vector2i) -> void:
 
 func _attack(attacker: Unit, defender: Unit) -> void:
 	_spawn_attack_fx(attacker.visual_pos, defender.visual_pos)
+	_play_sound("dragon" if attacker.kind == "dragon" else "attack")
 	if god_mode and defender.team == 0:
 		_spawn_floater(defender.visual_pos + Vector2(0, -10), "IMMUNE", ACCENT)
 		message = "Cheat aktif: unit pemain kebal!"
@@ -914,6 +976,8 @@ func _attack(attacker: Unit, defender: Unit) -> void:
 		var dead_pos: Vector2 = defender.visual_pos
 		var was_enemy := defender.team == 1
 		units.erase(defender)
+		defeat_fx.append({"pos": dead_pos, "life": 0.6})
+		_play_sound("ko")
 		_spawn_floater(dead_pos + Vector2(0, -34), "KO", ACCENT_WARM)
 		message = "%s menghabisi satu unit!" % who
 		if was_enemy and attacker.team == 0:
@@ -1240,6 +1304,7 @@ func _check_game_over() -> void:
 		else:
 			message = "Kemenangan! Pertempuran %d selesai. Tekan N untuk lanjut." % stage
 		reward_pending = not campaign_won
+		_play_sound("victory")
 	elif players == 0:
 		game_over = true
 		victory = false
@@ -1293,6 +1358,8 @@ func _restart() -> void:
 func _enter_game() -> void:
 	in_main_menu = false
 	has_started = true
+	if not music_player.playing:
+		music_player.play()
 	_refresh_ui()
 	queue_redraw()
 

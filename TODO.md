@@ -40,13 +40,13 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 - [x] Air memperlambat pergerakan.
 - [x] AI memperhitungkan biaya terrain saat mencari jalur.
 
-## 6. Audio dan animasi `[-]`
+## 6. Audio dan animasi `[x]`
 
 - [x] Animasi gerak, efek petir serangan, dan teks damage/reward.
-- [ ] Musik latar medan perang.
-- [ ] Suara serangan dan unit kalah.
-- [ ] Suara kemenangan dan naga.
-- [ ] Animasi unit kalah.
+- [x] Musik latar medan perang.
+- [x] Suara serangan dan unit kalah.
+- [x] Suara kemenangan dan naga.
+- [x] Animasi unit kalah.
 
 ## 7. Pengaturan `[ ]`
 
@@ -63,6 +63,5 @@ Keterangan: `[x]` selesai, `[-]` sebagian, `[ ]` belum dikerjakan.
 
 ## Urutan pengerjaan berikutnya
 
-1. Tambahkan audio dan animasi lanjutan.
-2. Tambahkan pengaturan dan pause.
-3. Tambahkan mode endless.
+1. Tambahkan pengaturan dan pause.
+2. Tambahkan mode endless.

@@ -11,6 +11,7 @@ func _ready() -> void:
 	_assert(is_equal_approx(main.start_btn.position.x + main.start_btn.size.x * 0.5, main.get_viewport_rect().size.x * 0.5), "tombol mulai berada di tengah")
 	main._enter_game()
 	_assert(not main.in_main_menu, "tombol mulai membuka permainan")
+	_assert(main.music_player.stream != null and main.sounds.size() == 4, "musik dan efek suara tersedia")
 	main.stage = 7
 	main.player_gold = 345
 	main.units[0].hp = 3
@@ -175,6 +176,13 @@ func _ready() -> void:
 
 	print("SMOKE OK")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(main.save_path))
+	main.music_player.stop()
+	main.sfx_player.stop()
+	main.music_player.stream = null
+	main.sfx_player.stream = null
+	main.sounds.clear()
+	main.queue_free()
+	await get_tree().create_timer(0.2).timeout
 	get_tree().quit(0)
 
 
