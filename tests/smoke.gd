@@ -2,6 +2,8 @@ extends Node
 
 func _ready() -> void:
 	var main = load("res://scenes/main.tscn").instantiate()
+	main.save_path = "user://campaign-smoke.cfg"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(main.save_path))
 	add_child(main)
 	await get_tree().process_frame
 
@@ -9,6 +11,15 @@ func _ready() -> void:
 	_assert(is_equal_approx(main.start_btn.position.x + main.start_btn.size.x * 0.5, main.get_viewport_rect().size.x * 0.5), "tombol mulai berada di tengah")
 	main._enter_game()
 	_assert(not main.in_main_menu, "tombol mulai membuka permainan")
+	main.stage = 7
+	main.player_gold = 345
+	main._save_progress()
+	main.stage = 1
+	main.player_gold = 0
+	_assert(main._load_progress() and main.stage == 7 and main.player_gold == 345, "progres level dan gold tersimpan")
+	main.stage = 1
+	main.player_gold = 200
+	main._setup_battle()
 	var initial_players = main.units.filter(func(u): return u.team == 0).size()
 	var initial_enemies = main.units.filter(func(u): return u.team == 1).size()
 	_assert(initial_players >= 3 and initial_players <= 5, "pemain mulai dengan 3-5 unit")
@@ -106,6 +117,7 @@ func _ready() -> void:
 	_assert(main.campaign_won, "menang level 100 menamatkan kampanye")
 
 	print("SMOKE OK")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(main.save_path))
 	get_tree().quit(0)
 
 

@@ -97,6 +97,7 @@ var campaign_won := false
 var stage_title := ""
 var in_main_menu := true
 var has_started := false
+var save_path := "user://campaign.cfg"
 
 var end_turn_btn: Button
 var restart_btn: Button
@@ -143,7 +144,11 @@ func _ready() -> void:
 	_build_styleboxes()
 	_build_ui()
 	get_viewport().size_changed.connect(_on_viewport_resized)
-	_start_campaign()
+	if _load_progress():
+		has_started = true
+		_setup_battle()
+	else:
+		_start_campaign()
 	in_main_menu = true
 	_refresh_ui()
 	set_process(true)
@@ -243,6 +248,24 @@ func _start_campaign() -> void:
 	campaign_won = false
 	player_gold = 200
 	_setup_battle()
+	_save_progress()
+
+
+func _save_progress() -> void:
+	var save := ConfigFile.new()
+	save.set_value("campaign", "stage", stage)
+	save.set_value("campaign", "gold", player_gold)
+	save.save(save_path)
+
+
+func _load_progress() -> bool:
+	var save := ConfigFile.new()
+	if save.load(save_path) != OK:
+		return false
+	stage = clampi(int(save.get_value("campaign", "stage", 1)), 1, MAX_STAGE)
+	player_gold = maxi(int(save.get_value("campaign", "gold", 200)), 0)
+	campaign_won = false
+	return true
 
 
 func _stage_enemies(s: int, requested_count := -1) -> Array:
@@ -325,7 +348,7 @@ func _refresh_ui() -> void:
 		start_btn.size = Vector2(minf(560.0, menu_card.size.x - 40.0), 72)
 		start_btn.position = Vector2(menu_card.position.x + (menu_card.size.x - start_btn.size.x) * 0.5, menu_card.position.y + menu_card.size.y * 0.82)
 		start_btn.visible = true
-		start_btn.text = "Lanjutkan Pertempuran  (Enter)" if has_started else "Mulai Kampanye  (Enter)"
+		start_btn.text = "Lanjutkan Level %d  (Enter)" % stage if has_started else "Mulai Kampanye  (Enter)"
 		menu_btn.visible = false
 		end_turn_btn.visible = false
 		restart_btn.visible = false
@@ -997,6 +1020,7 @@ func _next_stage() -> void:
 	stage += 1
 	player_gold += 100 + (stage - 1) * 25
 	_setup_battle()
+	_save_progress()
 
 
 func _restart() -> void:
